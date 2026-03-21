@@ -7,9 +7,6 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@200;300;400;500;700;900&family=JetBrains+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 
-/* ═══════════════════════════════════════
-   RESET & VARIABLES
-   ═══════════════════════════════════════ */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
 :root {
@@ -37,7 +34,7 @@
 
   --section-gap: 8vw;
   --content-max: 1280px;
-  --iframe-ratio: 56.25%; /* 16:9 */
+  --iframe-ratio: 56.25%;
 }
 
 html {
@@ -51,14 +48,13 @@ body {
   font-family: var(--font-body);
   line-height: 1.7;
   overflow-x: hidden;
+  word-break: keep-all;
+  line-break: strict;
 }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--magenta-20); border-radius: 4px; }
 
-/* ═══════════════════════════════════════
-   NOISE OVERLAY (texture)
-   ═══════════════════════════════════════ */
 body::before {
   content: '';
   position: fixed; inset: 0; z-index: 9999;
@@ -68,9 +64,6 @@ body::before {
   opacity: 0.5;
 }
 
-/* ═══════════════════════════════════════
-   DOT NAVIGATION (right side)
-   ═══════════════════════════════════════ */
 .dot-nav {
   position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
   z-index: 1000;
@@ -98,9 +91,6 @@ body::before {
 }
 .dot-nav a:hover .dot-label { opacity: 1; }
 
-/* ═══════════════════════════════════════
-   GLOBAL SECTION LAYOUT
-   ═══════════════════════════════════════ */
 .section {
   position: relative;
   min-height: 100vh;
@@ -112,9 +102,6 @@ body::before {
   position: relative;
 }
 
-/* ═══════════════════════════════════════
-   SECTION NUMBERING & TYPOGRAPHY
-   ═══════════════════════════════════════ */
 .section-num {
   font-family: var(--font-mono);
   font-size: 11px; letter-spacing: 3px;
@@ -129,6 +116,7 @@ body::before {
   color: #fff;
   margin-bottom: 16px;
   max-width: 800px;
+  text-wrap: balance;
 }
 .section-title em {
   font-style: italic;
@@ -143,9 +131,6 @@ body::before {
 }
 .section-desc strong { color: var(--text); font-weight: 500; }
 
-/* ═══════════════════════════════════════
-   CARD SLOT (iframe placeholder)
-   ═══════════════════════════════════════ */
 .card-slot {
   position: relative;
   width: 100%;
@@ -167,7 +152,6 @@ body::before {
     inset 0 0 0 1px rgba(255,255,255,0.04);
 }
 
-/* Aspect ratio wrapper inside card-slot */
 .card-slot .aspect {
   position: relative;
   width: 100%;
@@ -178,28 +162,21 @@ body::before {
 .card-slot .aspect.ratio-16-9 { padding-top: 56.25%; }
 .card-slot .aspect.ratio-2-1  { padding-top: 50%; }
 .card-slot .aspect.ratio-21-9 { padding-top: 42.86%; }
-/* 人物画像卡：竖向比例（未放在 .persona-layout 内时回退） */
 .card-slot.persona-embed .aspect.ratio-persona { padding-top: 162%; }
-/*
- * 五类画像布局策略：
- * 每列固定 380px（卡片的设计宽度），5列+间距 = 1940px 整体宽度。
- * persona-layout-scale 固定 1940px，用 zoom 等比缩放至视口可见宽度。
- * 这样 iframe 内部始终在 380px 视口里渲染，卡片内容不被压缩。
- */
 #s4 .persona-layout-scale {
   width: 1940px;
   max-width: none;
   margin: 0 auto;
-  zoom: 0.66; /* 1940 × 0.66 ≈ 1280px，适配 ≥1344px 视口 */
+  zoom: 0.66;
 }
 @media (max-width: 1343px) {
-  #s4 .persona-layout-scale { zoom: 0.62; } /* 1940×0.62≈1203px ≤ 1295px */
+  #s4 .persona-layout-scale { zoom: 0.62; }
 }
 @media (max-width: 1200px) {
-  #s4 .persona-layout-scale { zoom: 0.56; } /* 1940×0.56≈1086px ≤ 1152px */
+  #s4 .persona-layout-scale { zoom: 0.56; }
 }
 @media (max-width: 1050px) {
-  #s4 .persona-layout-scale { zoom: 0.50; } /* 1940×0.50=970px ≤ 1002px */
+  #s4 .persona-layout-scale { zoom: 0.50; }
 }
 @media (max-width: 900px) {
   #s4 .persona-layout-scale {
@@ -231,7 +208,6 @@ body::before {
   top: 10px;
   left: 10px;
 }
-/* 本节不强制整屏高度，减少上下留白；允许 1940px persona 行溢出 section-inner */
 #s4 .section-inner { overflow: visible; }
 #s4.section {
   min-height: auto;
@@ -239,19 +215,16 @@ body::before {
   padding-top: min(5vw, 48px);
   padding-bottom: min(6vw, 56px);
 }
-/* 四极核：四列卡片 iframe，固定高度避免裁切过紧 */
 .card-slot.pole-embed .aspect.pole-embed-aspect {
   padding-top: 0;
   height: clamp(440px, 58vw, 860px);
   min-height: 400px;
 }
-/* 闭环机制：feedback-loop 需全宽 + 足够高度（含标题/环图/底栏） */
 .card-slot.loop-embed .aspect.loop-embed-aspect {
   padding-top: 0;
   height: clamp(640px, 78vh, 920px);
   min-height: 600px;
 }
-/* 双线框架：两行示意图 + 汇聚卡 + 底栏（无顶栏文案），16:9 会严重裁切 */
 .card-slot.dual-line-embed .aspect.dual-line-aspect {
   padding-top: 0;
   height: clamp(600px, 88vh, 940px);
@@ -263,7 +236,6 @@ body::before {
     min-height: 540px;
   }
 }
-/* 因果回路 CLD 二维交互：全画布 + 四角面板，需高 iframe；内页自适应 */
 .card-slot.cld-embed .aspect.cld-embed-aspect {
   padding-top: 0;
   height: clamp(720px, 88vh, 980px);
@@ -275,7 +247,6 @@ body::before {
     min-height: 560px;
   }
 }
-/* 停留意愿矩阵（csvi_quadrant）：顶栏 + 左图右卡，需高 iframe */
 .card-slot.matrix-embed .aspect.matrix-embed-aspect {
   padding-top: 0;
   height: clamp(640px, 88vh, 920px);
@@ -287,7 +258,6 @@ body::before {
     min-height: 520px;
   }
 }
-/* 三类节点卡片：三列并列 + 示意图 + 底栏，需高于 21:9 */
 .card-slot.node-type-embed .aspect.node-type-embed-aspect {
   padding-top: 0;
   height: clamp(500px, 58vw, 620px);
@@ -299,7 +269,6 @@ body::before {
     min-height: 500px;
   }
 }
-/* 三尺度空间原型（prototype-cards）：三列 + 顶栏尺度条，高度与节点类型卡接近 */
 .card-slot.prototype-embed .aspect.prototype-embed-aspect {
   padding-top: 0;
   height: clamp(520px, 62vw, 680px);
@@ -311,7 +280,6 @@ body::before {
     min-height: 520px;
   }
 }
-/* 干预节点地图：全屏 Leaflet + 多面板，需高 iframe */
 .card-slot.map-intervention-embed .aspect.map-intervention-aspect {
   padding-top: 0;
   height: clamp(560px, 78vh, 900px);
@@ -323,7 +291,6 @@ body::before {
     min-height: 480px;
   }
 }
-/* CSVI 三维度地图（E / S / AC）：全屏 Leaflet + 顶栏/图例/侧栏，需高于 16:9 比例位 */
 .card-grid.cols-3.map-trio .card-slot.map-csvi-embed {
   min-width: 0;
 }
@@ -344,7 +311,6 @@ body::before {
     min-height: 460px;
   }
 }
-/* CSVI 模型结构（csvi-model）：主方程带 + 底部三卡，需高于 21:9 */
 .card-slot.csvi-model-embed .aspect.csvi-model-aspect {
   padding-top: 0;
   height: clamp(720px, 88vh, 960px);
@@ -356,20 +322,43 @@ body::before {
     min-height: 600px;
   }
 }
-/* 数据系统演化架构（data-system-viz）：内页 min-width≈1480px，整卡给足高度 */
+/* data-system-viz 内页 .page 固定 min-width:1480px；按比例缩小以适配卡槽宽度，避免横向拖动 */
+.card-slot.data-system-viz-embed {
+  container-type: inline-size;
+  container-name: dsv-embed;
+}
 .card-slot.data-system-viz-embed .aspect.data-system-viz-aspect {
   padding-top: 0;
-  height: clamp(720px, 84vh, 980px);
-  min-height: 680px;
+  overflow: hidden;
+  /* 与 1480×H 设计稿对齐；H 略大于实际内容可减少 iframe 内滚动条 */
+  --dsv-design-w: 1480px;
+  --dsv-design-h: 1080px;
+  height: calc(var(--dsv-design-h) * min(1, 100cqi / var(--dsv-design-w)));
+  min-height: 320px;
+}
+.card-slot.data-system-viz-embed .data-system-viz-scale-wrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--dsv-design-w);
+  height: var(--dsv-design-h);
+  transform-origin: 0 0;
+  transform: scale(min(1, 100cqi / var(--dsv-design-w)));
+}
+.card-slot.data-system-viz-embed .data-system-viz-scale-wrap iframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--dsv-design-w);
+  height: var(--dsv-design-h);
+  border: none;
 }
 @media (max-width: 600px) {
   .card-slot.data-system-viz-embed .aspect.data-system-viz-aspect {
-    height: clamp(640px, 88vh, 900px);
-    min-height: 600px;
+    min-height: 280px;
   }
 }
 
-/* iframe, 图片, or placeholder content */
 .card-slot iframe,
 .card-slot img,
 .card-slot .placeholder {
@@ -382,7 +371,6 @@ body::before {
   display: block;
 }
 
-/* Placeholder state (before lazy-load) */
 .card-slot .placeholder {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -409,7 +397,6 @@ body::before {
   50%      { opacity: 0.8; transform: scale(1.06); }
 }
 
-/* Card-slot annotation badge */
 .card-slot .slot-badge {
   position: absolute; top: 14px; left: 14px; z-index: 5;
   font-family: var(--font-mono);
@@ -422,9 +409,6 @@ body::before {
   backdrop-filter: blur(8px);
 }
 
-/* ═══════════════════════════════════════
-   MULTI-CARD GRID (for portrait galleries)
-   ═══════════════════════════════════════ */
 .card-grid {
   display: grid;
   gap: 16px;
@@ -433,15 +417,12 @@ body::before {
 .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
 .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
 
-.card-grid .card-slot .aspect { padding-top: 130%; } /* portrait */
-/* 并列「双图」嵌入：在 grid 内强制保留 16:9（否则继承上方竖版比例） */
+.card-grid .card-slot .aspect { padding-top: 130%; }
 .card-grid.cols-2.figure-pair .card-slot .aspect.ratio-16-9 { padding-top: 56.25%; }
-/* E / S / AC 三维度地图：见 .map-csvi-aspect（固定高度，非 16:9） */
 
 @media (max-width: 900px) {
   .card-grid.cols-5 { grid-template-columns: repeat(3, 1fr); }
   .card-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
-  /* persona-layout at ≤900px: horizontal scroll at natural 1940px */
   #s4 .persona-layout-scale {
     overflow-x: auto;
     overflow-y: visible;
@@ -463,9 +444,6 @@ body::before {
   .section-desc { font-size: 14px; }
 }
 
-/* ═══════════════════════════════════════
-   SPLIT LAYOUT (text left, card right)
-   ═══════════════════════════════════════ */
 .split {
   display: grid;
   grid-template-columns: 380px 1fr;
@@ -485,9 +463,6 @@ body::before {
   .split.reverse .split-card { order: 0; }
 }
 
-/* ═══════════════════════════════════════
-   HERO SECTION
-   ═══════════════════════════════════════ */
 #hero {
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
@@ -516,6 +491,7 @@ body::before {
   font-weight: 700; line-height: 1.15;
   color: #fff;
   margin-bottom: 20px;
+  text-wrap: balance;
 }
 #hero h1 em {
   font-style: italic; color: var(--magenta);
@@ -524,6 +500,7 @@ body::before {
 #hero .hero-sub {
   font-size: 16px; color: var(--text-dim);
   line-height: 1.8; max-width: 560px; margin: 0 auto 40px;
+  text-wrap: balance;
 }
 #hero .scroll-cue {
   display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
@@ -535,9 +512,6 @@ body::before {
   50%     { transform: translateY(8px); }
 }
 
-/* ═══════════════════════════════════════
-   DIVIDER LINES
-   ═══════════════════════════════════════ */
 .divider {
   width: 100%; max-width: var(--content-max);
   margin: 0 auto;
@@ -545,9 +519,6 @@ body::before {
   background: linear-gradient(90deg, transparent, var(--magenta-20), transparent);
 }
 
-/* ═══════════════════════════════════════
-   FOOTER
-   ═══════════════════════════════════════ */
 #footer {
   padding: 80px 24px 40px;
   text-align: center;
@@ -555,10 +526,9 @@ body::before {
   font-size: 10px; color: var(--text-faint);
   letter-spacing: 1px; line-height: 2;
 }
+.open-questions p { margin: 0 0 0.85em; }
+.open-questions p:last-child { margin-bottom: 0; }
 
-/* ═══════════════════════════════════════
-   SCROLL REVEAL ANIMATION
-   ═══════════════════════════════════════ */
 .reveal {
   opacity: 0;
   transform: translateY(40px);
@@ -573,9 +543,6 @@ body::before {
 .reveal-delay-2 { transition-delay: 0.25s; }
 .reveal-delay-3 { transition-delay: 0.4s; }
 
-/* ═══════════════════════════════════════
-   ANNOTATION CALLOUT (mini inline note)
-   ═══════════════════════════════════════ */
 .callout {
   font-family: var(--font-mono);
   font-size: 10px; letter-spacing: 0.5px;
@@ -585,7 +552,6 @@ body::before {
   margin-top: 12px;
 }
 
-/* S8 三类节点 · 类型卡片 / S11 三尺度原型：玫红强调 */
 #s8 .callout {
   border-left-color: var(--magenta);
   background: linear-gradient(90deg, var(--magenta-08), transparent);
@@ -616,9 +582,6 @@ body::before {
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════
-     DOT NAVIGATION
-     ════════════════════════════════════════════ -->
 <nav class="dot-nav" id="dotNav">
   <a href="#hero"><span class="dot-label">首页</span></a>
   <a href="#s1"><span class="dot-label">01 两种失灵</span></a>
@@ -638,17 +601,13 @@ body::before {
   <a href="#s13"><span class="dot-label">13 开放问题</span></a>
 </nav>
 
-<!-- ════════════════════════════════════════════
-     HERO
-     ════════════════════════════════════════════ -->
 <section id="hero" class="section">
   <div class="hero-content">
     <div class="hero-sup">徐家汇适老化改造 · 设计叙事</div>
-    <h1>人机共生空间与<br>老年<em>认知恢复</em></h1>
+    <h1>人机共生空间与老年<em>认知恢复</em></h1>
     <p class="hero-sub">
-      徐家汇拥有全上海最丰富的认知刺激资源，但对老年人来说，
-      这些资源方向全错或门完全关着。以下叙述围绕：如何用系统建模识别干预杠杆，
-      并在人机共生空间中部署这些杠杆。
+      徐家汇认知刺激资源密集，但对许多老年人而言，入口错位或难以进入。
+      下文说明如何用模型找到干预点，并在人机共生空间里落地。
     </p>
     <div class="scroll-cue">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
@@ -659,9 +618,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S1 · 两种失灵，同一个空间
-     ════════════════════════════════════════════ -->
 <section id="s1" class="section">
   <div class="section-inner">
     <div class="section-num reveal">01</div>
@@ -692,9 +648,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S2 · 四极核
-     ════════════════════════════════════════════ -->
 <section id="s2" class="section">
   <div class="section-inner">
     <div class="section-num reveal">02</div>
@@ -721,9 +674,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S3 · 双线框架
-     ════════════════════════════════════════════ -->
 <section id="s3" class="section">
   <div class="section-inner">
     <div class="split reverse">
@@ -757,9 +707,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S4 · 五类人群画像
-     ════════════════════════════════════════════ -->
 <section id="s4" class="section">
   <div class="section-inner">
     <div class="section-num reveal">04</div>
@@ -767,8 +714,7 @@ body::before {
       五类<em>老年人群画像</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      行为模式完全不同的五类老年人——他们的出行节律和与工作人口的交集状态
-      是后续所有空间分析的基础输入，也是 <strong>CSVI 暴露度 E</strong> 的加权基础。
+      五类老年人在出行节律、与就业人群的交集上差异明显，是后续空间分析的共同起点。
     </p>
 
     <div class="persona-layout-scale reveal reveal-delay-3">
@@ -836,9 +782,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S4b · 数据系统全流程（紧接五类画像）
-     ════════════════════════════════════════════ -->
 <section id="s4b" class="section">
   <div class="section-inner">
     <div class="section-num reveal">04b</div>
@@ -846,14 +789,16 @@ body::before {
       从画像到决策的<em>系统流程</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      五类人群与多源空间数据进入同一套流水线：<strong>指标挂载 → CLD 变量 → CSVI（E/S/AC）</strong>，
-      再衔接<strong>三维度地图、停留意愿矩阵、三类节点与场域选址</strong>。下图嵌入完整演化架构（<code style="font-size:12px;opacity:0.85">data-system-viz.html</code>）；内页较宽时可在框内<strong>横向滚动</strong>。
+      人群与多源空间数据汇入同一套流程：<strong>指标挂载 → 模型变量 → CSVI（E / S / AC）</strong>，
+      再与地图、停留矩阵、节点与选址衔接。下图是全流程总览。
     </p>
 
     <div class="card-slot data-system-viz-embed reveal reveal-delay-3" style="margin-top: 28px;">
       <span class="slot-badge">数据系统演化 · 全流程</span>
       <div class="aspect data-system-viz-aspect">
-        <iframe data-src="data-system-viz.html" loading="lazy" title="徐家汇 · 数据系统演化架构"></iframe>
+        <div class="data-system-viz-scale-wrap">
+          <iframe data-src="data-system-viz.html" loading="lazy" title="徐家汇 · 数据系统演化架构"></iframe>
+        </div>
         <div class="placeholder">
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="1.5"><path d="M4 5h6v8H4zM14 5h6v5h-6zM14 13h6v6h-6zM4 15h6v4H4z"/><path d="M10 9h4M12 7v4"/></svg></div>
           <span class="ph-label">数据系统演化架构 · 流程图</span>
@@ -865,9 +810,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S5 · CSVI 脆弱性模型
-     ════════════════════════════════════════════ -->
 <section id="s5" class="section">
   <div class="section-inner">
     <div class="section-num reveal">05</div>
@@ -875,13 +817,9 @@ body::before {
       <em>CSVI</em> 脆弱性模型 · 结构框架
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      <strong>CSVI = E × S ÷ (AC+1)</strong>：暴露度 E（谁在这里）、敏感性 S（空间在伤害还是浪费）、
-      适应能力 AC（生理与社会缓冲）三维压缩为一个得分；<strong>两种失灵</strong>各自编码进 S 的两个分项
-      （S<sub>env</sub> / S<sub>contact</sub>）。下方为同一模型的结构拆解与分量联动示意。
+      <strong>CSVI = E × S ÷ (AC+1)</strong>：暴露度 E、敏感性 S、适应能力 AC 合成单一得分；
+      <strong>两种失灵</strong>分别体现在 S 的两项（S<sub>env</sub> / S<sub>contact</sub>）。下方为结构示意。
     </p>
-    <div class="callout reveal reveal-delay-3">
-      下一页<strong>三张地图</strong>分别给出 E、S、AC 在徐汇区的数值分布，并与节点类型、停留矩阵章节衔接。
-    </div>
 
     <div class="card-slot csvi-model-embed reveal reveal-delay-3" style="margin-top: 32px;">
       <span class="slot-badge">CSVI 模型结构</span>
@@ -898,9 +836,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S6 · CSVI 三维度地图（E · S · AC）
-     ════════════════════════════════════════════ -->
 <section id="s6" class="section">
   <div class="section-inner">
     <div class="section-num reveal">06</div>
@@ -908,8 +843,7 @@ body::before {
       CSVI <em>三维度地图</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      与 S5 同一套计算结果。<strong>三张地图分别展示了 E、S、AC 在徐汇区的数值分布</strong>，
-      与后文节点大地图在尺度与图例上相互对照。
+      与上一节同一套结果：<strong>E、S、AC</strong> 在徐汇区的空间分布。
     </p>
 
     <div class="card-grid cols-3 map-trio reveal reveal-delay-3" style="margin-top: 32px;">
@@ -946,9 +880,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S7 · 停留意愿矩阵
-     ════════════════════════════════════════════ -->
 <section id="s7" class="section">
   <div class="section-inner">
     <div class="section-num reveal">07</div>
@@ -956,13 +887,8 @@ body::before {
       停留意愿<em>矩阵</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      矩阵是 CSVI 分量的二维投影——纵轴 W_elder = E×(AC_phys+1)，
-      横轴 W_work = pop_15_59×Q。同一套数据、同一次计算的不同维度，
-      可视化"<strong>脆弱的方式不同</strong>"。
+      用两条停留意愿指标作平面投影，同一套计算从不同侧面呈现<strong>脆弱性差异</strong>。
     </p>
-    <div class="callout reveal reveal-delay-3">
-      此矩阵在 <strong>S8 节点地图</strong>一节中作为叠加图层呈现；本页承接叙事，展示同一数据在二维投影下如何呈现不同的脆弱性面貌。
-    </div>
 
     <div class="card-slot matrix-embed reveal reveal-delay-3" style="margin-top: 32px;">
       <span class="slot-badge">停留意愿矩阵</span>
@@ -979,9 +905,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S8 · 三类节点 · 三种空间原型（类型卡片）
-     ════════════════════════════════════════════ -->
 <section id="s8" class="section">
   <div class="section-inner">
     <div class="section-num reveal">08</div>
@@ -989,12 +912,9 @@ body::before {
       三类待改造节点：<em>三种空间原型</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      <strong>激活</strong>、<strong>瓶颈</strong>、<strong>临界</strong>三类节点对应不同的判定条件与干预逻辑：
-      激活侧重界面与可进入性，瓶颈侧重基础设施与连通修复，临界侧重边缘过渡与单点撬动。
+      <strong>激活</strong>、<strong>瓶颈</strong>、<strong>临界</strong>三类对应不同判定与改法：
+      界面与可进入、连通与设施、边缘过渡与单点撬动。
     </p>
-    <div class="callout reveal reveal-delay-3">
-      下方为三类<strong>节点类型</strong>示意卡片；下一页为同套判定在街段地图上的空间分布。
-    </div>
 
     <div class="card-slot node-type-embed reveal reveal-delay-3" style="margin-top: 32px;">
       <span class="slot-badge">三类节点类型</span>
@@ -1011,9 +931,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S8-map · 三类节点 · 大地图
-     ════════════════════════════════════════════ -->
 <section id="s8-map" class="section">
   <div class="section-inner">
     <div class="section-num reveal">08</div>
@@ -1030,7 +947,7 @@ body::before {
         <iframe data-src="map_intervention_nodes.html" loading="lazy" title="三类干预节点 · 地图"></iframe>
         <div class="placeholder">
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
-          <span class="ph-label">三类节点地图 · 底图 CSVI 高值抽样 + 三类节点全量标记</span>
+          <span class="ph-label">三类节点 · 地图</span>
         </div>
       </div>
     </div>
@@ -1039,9 +956,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S9 · 节点选址
-     ════════════════════════════════════════════ -->
 <section id="s9" class="section">
   <div class="section-inner">
     <div class="section-num reveal">09</div>
@@ -1049,12 +963,8 @@ body::before {
       节点选址：<em>三尺度聚焦</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      从大徐汇到基地缓冲区到基地内部，逐步聚焦为 3–5 个具体选址。
-      每个节点标注类型、CSVI 区间、象限、部署优先级和对应原型。
+      从大徐汇到缓冲区再到基地内部，逐级收敛到若干具体选址；节点标注类型、得分区间与优先级。
     </p>
-    <div class="callout reveal reveal-delay-3">
-      选址沿大徐汇—缓冲区—基地逐级收窄，与 <strong>S8 节点地图</strong>尺度一致；每一级聚焦 3–5 个具体节点及其类型、CSVI 区间与部署优先级。
-    </div>
 
     <div class="card-slot map-intervention-embed reveal reveal-delay-3" style="margin-top: 32px;">
       <span class="slot-badge">节点选址 × 三尺度聚焦</span>
@@ -1071,9 +981,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S10 · 感知-优化-干预闭环
-     ════════════════════════════════════════════ -->
 <section id="s10" class="section">
   <div class="section-inner">
     <div class="section-num reveal">10</div>
@@ -1081,9 +988,7 @@ body::before {
       感知 → 优化 → <em>干预</em> 闭环
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      以 5 分钟为周期，根据实时空间状态自动切换干预模式。
-      每次干预的效果反馈回感知层，Q 值和 AC 分量持续更新，
-      形成<strong>自我完善的闭环</strong>。
+      以约 5 分钟为周期随空间状态调整干预；效果回到感知侧，参数迭代更新，形成<strong>闭环</strong>。
     </p>
 
     <div class="card-slot loop-embed reveal reveal-delay-3" style="margin-top: 32px;">
@@ -1101,9 +1006,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S11 · 三类空间改造原型（P-01 触媒 / P-02 廊道 / P-03 场域）
-     ════════════════════════════════════════════ -->
 <section id="s11" class="section">
   <div class="section-inner">
     <div class="section-num reveal">11</div>
@@ -1111,12 +1013,9 @@ body::before {
       三类空间改造<em>原型</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      在<strong>大徐汇—缓冲区—基地</strong>三尺度上，分别对应<strong>触媒装置、连接廊道、场域系统</strong>三种空间原型；
-      与 <strong>S8 节点类型</strong>及<strong>地图标注</strong>配合使用：类型回答「判哪里」，原型回答「改什么样」。
+      在<strong>大徐汇—缓冲区—基地</strong>三尺度上，对应<strong>触媒装置、连接廊道、场域系统</strong>三种改法；
+      与节点类型配合：类型定「在哪」，原型定「做成什么样」。
     </p>
-    <div class="callout reveal reveal-delay-3">
-      下方为三列原型卡与顶栏尺度条（P-01 / P-02 / P-03），可与 S9 选址叙事对照。
-    </div>
 
     <div class="card-slot prototype-embed reveal reveal-delay-3" style="margin-top: 32px;">
       <span class="slot-badge">三尺度空间原型</span>
@@ -1133,9 +1032,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S12 · 因果回路建模与系统动力学仿真（CLD 二维）
-     ════════════════════════════════════════════ -->
 <section id="s12" class="section">
   <div class="section-inner">
     <div class="section-num reveal">12</div>
@@ -1143,12 +1039,11 @@ body::before {
       因果回路<em>建模</em>与系统动力学<em>仿真</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      两种失灵之所以稳定存在，是因为背后有自我强化的回路。
-      仿真回答"<strong>多回路协同干预下系统能否越过相变点</strong>"——在可探索的因果结构里检验干预组合。
+      两种失灵背后存在自我强化回路；仿真用于检验<strong>多回路同时干预</strong>时系统能否越过关键转折。
     </p>
 
     <div class="card-slot cld-embed reveal reveal-delay-3" style="margin-top: 32px;">
-      <span class="slot-badge">CLD 二维交互 · 节点卡片标注</span>
+      <span class="slot-badge">因果回路 · 交互示意</span>
       <div class="aspect cld-embed-aspect">
         <iframe data-src="cld_2d_interactive.html" loading="lazy" title="因果回路建模与系统动力学仿真 · CLD 二维交互"></iframe>
         <div class="placeholder">
@@ -1163,37 +1058,27 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- ════════════════════════════════════════════
-     S13 · 开放问题
-     ════════════════════════════════════════════ -->
 <section id="s13" class="section">
   <div class="section-inner" style="max-width: 720px;">
     <div class="section-num reveal">13</div>
     <h2 class="section-title reveal reveal-delay-1">
       开放问题与<em>系统边界</em>
     </h2>
-    <p class="section-desc reveal reveal-delay-2" style="max-width:100%;">
-      设计能主动制造代际接触还是只能提供偶遇条件？<br>
-      临界节点涉及产权边界，设计与治理如何划界？<br>
-      运营主体缺失后闭环多快退化？<br><br>
-      <strong>这三个问题是设计第一天就该正视的。</strong>
-    </p>
+    <div class="section-desc open-questions reveal reveal-delay-2" style="max-width:100%;">
+      <p>设计能主动制造代际接触还是只能提供偶遇条件？</p>
+      <p>临界节点涉及产权边界，设计与治理如何划界？</p>
+      <p>运营主体缺失后闭环多快退化？</p>
+      <p><strong>这三个问题是设计第一天就该正视的。</strong></p>
+    </div>
   </div>
 </section>
 
-<!-- ════════════════════════════════════════════
-     FOOTER
-     ════════════════════════════════════════════ -->
 <footer id="footer">
-  徐家汇适老化改造 · 人机共生空间与老年认知恢复 · 2026<br>
-  <span style="color:var(--magenta-20);">━━━━━</span>
+  <div>徐家汇适老化改造 · 人机共生空间与老年认知恢复 · 2026</div>
+  <div style="color:var(--magenta-20);">━━━━━</div>
 </footer>
 
-<!-- ════════════════════════════════════════════
-     SCRIPTS
-     ════════════════════════════════════════════ -->
 <script>
-/* ── Scroll Reveal ── */
 const reveals = document.querySelectorAll('.reveal');
 const revealObs = new IntersectionObserver((entries) => {
   entries.forEach(e => {
@@ -1204,7 +1089,6 @@ const revealObs = new IntersectionObserver((entries) => {
 }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 reveals.forEach(el => revealObs.observe(el));
 
-/* ── Dot Nav Active State ── */
 const sections = document.querySelectorAll('.section[id]');
 const dots = document.querySelectorAll('.dot-nav a');
 
@@ -1218,7 +1102,6 @@ const navObs = new IntersectionObserver((entries) => {
 }, { threshold: 0.35 });
 sections.forEach(s => navObs.observe(s));
 
-/* ── Lazy-Load iframes ── */
 const cardSlots = document.querySelectorAll('.card-slot');
 const iframeObs = new IntersectionObserver((entries) => {
   entries.forEach(e => {
@@ -1227,7 +1110,6 @@ const iframeObs = new IntersectionObserver((entries) => {
       if (iframe) {
         iframe.src = iframe.dataset.src;
         iframe.removeAttribute('data-src');
-        // Hide placeholder
         const ph = e.target.querySelector('.placeholder');
         if (ph) ph.style.display = 'none';
       }

@@ -8,14 +8,13 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;800&family=Noto+Sans+SC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
   :root {
     --bg:#08080E; --card:#0D0D18; --grid:rgba(255,255,255,0.025);
-    /* 三卡均为玫红系：主色 / 略深 / 略浅，便于区分层次 */
     --a:#E91E8C; --al:#FF4DAD; --ad:rgba(233,30,140,0.10); --ab:rgba(233,30,140,0.28);
     --b:#C2186B; --bl:#FF4DAD; --bd:rgba(233,30,140,0.12); --bb:rgba(233,30,140,0.34);
     --c:#AD1457; --cl:#FF4DAD; --cd:rgba(233,30,140,0.12); --cb:rgba(233,30,140,0.36);
     --t1:#FDF2F8; --t2:#9B7A8F; --t3:rgba(233,30,140,0.42);
   }
   *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 28px;font-family:'Noto Sans SC',sans-serif;}
+  body{background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 28px;font-family:'Noto Sans SC',sans-serif;word-break:keep-all;line-break:strict;}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:1060px;}
 
   .card{border-radius:20px;background:var(--card);overflow:hidden;display:flex;flex-direction:column;position:relative;}
@@ -99,10 +98,10 @@
       </svg>
     </div>
     <div class="strip">
-      <div class="kv"><span class="k">W_elder</span><span class="v">E × (AC_phys+1) <span class="vn">与矩阵纵轴一致</span></span></div>
-      <div class="kv"><span class="k">CSVI</span><span class="v">高 <span class="vn">+ W轴 ≥1 激活</span></span></div>
+      <div class="kv"><span class="k">W_elder</span><span class="v">E × (AC_phys+1)</span></div>
+      <div class="kv"><span class="k">CSVI</span><span class="v">高</span></div>
       <div class="kv"><span class="k">干预效益</span><span class="v">最高</span></div>
-      <div class="desc">脆弱性集中 + 空间可操作，<strong>三子类分别对应双线</strong></div>
+      <div class="desc">脆弱性集中、<strong>且可操作</strong></div>
     </div>
   </div>
 
@@ -136,12 +135,12 @@
         <circle cx="260" cy="134" r="11" fill="#E91E8C" opacity=".8"/>
         <text x="260" y="173" text-anchor="middle" fill="rgba(233,30,140,.4)" font-size="7.5" font-family="Noto Sans SC,sans-serif">激活节点</text>
         <text x="160" y="204" text-anchor="middle" fill="rgba(233,30,140,.75)" font-size="8.5" font-family="DM Mono,monospace" font-weight="500">AC_phys · 较低 50%</text>
-        <text x="160" y="218" text-anchor="middle" fill="rgba(233,30,140,.52)"   font-size="7.5" font-family="Noto Sans SC,sans-serif">双簇交界 · 衔接激活</text>
+        <text x="160" y="218" text-anchor="middle" fill="rgba(233,30,140,.52)"   font-size="7.5" font-family="Noto Sans SC,sans-serif">触媒簇交界 · 与场域同源</text>
       </svg>
     </div>
     <div class="strip">
       <div class="kv"><span class="k">AC_phys</span><span class="v">较低 50% <span class="vn">≤ 全域中位</span></span></div>
-      <div class="kv"><span class="k">位置</span><span class="v">两簇激活扩张交界</span></div>
+      <div class="kv"><span class="k">位置</span><span class="v">触媒 DBSCAN 簇扩张交界（与场域一致）</span></div>
       <div class="desc"><strong>基础设施修复优先</strong>，连通性是唯一制约</div>
     </div>
   </div>

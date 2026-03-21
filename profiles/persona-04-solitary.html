@@ -3,7 +3,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
   :root{--r:#E91E8C;--rl:#FF4DAD;--rd:rgba(233,30,140,0.15);--rb:rgba(233,30,140,0.35);--bg:#0C0C12;--bg-card:#12121C;--bg-panel:#1A1A28;--t1:#F0F0F8;--t2:#8888AA;--t3:#555568;--grid:rgba(233,30,140,0.07);}
   *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);font-family:'Noto Sans SC',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px;}
+  body{background:var(--bg);font-family:'Noto Sans SC',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px;word-break:keep-all;line-break:strict;}
   .card{width:min(380px,100%);background:var(--bg-card);border:1px solid var(--rb);border-radius:20px;overflow:hidden;position:relative;box-shadow:0 0 0 1px rgba(233,30,140,0.1),0 0 40px rgba(233,30,140,0.08),0 20px 60px rgba(0,0,0,0.6);}
   .card::before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0;}
   .card::after{content:'';position:absolute;top:-80px;right:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(233,30,140,0.18) 0%,transparent 70%);pointer-events:none;z-index:0;}
@@ -21,7 +21,7 @@
   .ip.ip-photo{padding:4px;border-style:solid;border-color:rgba(233,30,140,0.22);background:rgba(233,30,140,0.05);}
   .ip.ip-photo img{width:100%;height:100%;object-fit:contain;display:block;}
   .sc{padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;}
-  .pn{font-size:18px;font-weight:700;color:var(--t1);line-height:1.2;}
+  .pn{font-size:18px;font-weight:700;color:var(--t1);line-height:1.2;display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
   .sr{display:flex;flex-direction:column;gap:2px;}
   .sl{font-size:9px;color:var(--t3);letter-spacing:0.1em;text-transform:uppercase;}
   .sv{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:var(--t1);}
@@ -44,12 +44,12 @@
   <div class="ct">
     <div class="ib"><div class="ip ip-photo"><img src="persona-illust-1.png" alt="独居高龄老人 · 简笔插图" width="92" height="102" loading="lazy" decoding="async"/></div></div>
     <div class="sc">
-      <div class="pn">纯老家庭<br><small style="font-size:12px;font-weight:400;color:var(--t2)">独居高龄老人</small></div>
+      <div class="pn"><span>纯老家庭</span><small style="font-size:12px;font-weight:400;color:var(--t2)">独居高龄老人</small></div>
       <div class="sr"><span class="sl">出行半径</span><span class="sv">300 – 500 m</span></div>
       <div class="sr"><span class="sl">徐汇智能监护</span><span class="sv a">9,600 人</span></div>
       <div class="pr">
         <div class="dw"><svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="none" stroke="#1E1E30" stroke-width="5"/><circle cx="20" cy="20" r="15" fill="none" stroke="#E91E8C" stroke-width="5" stroke-dasharray="5.7 88.6" stroke-linecap="round"/></svg><div class="dc">6%</div></div>
-        <div class="pl">人群占比<br>认知干预核心对象</div>
+        <div class="pl">人群占比 · 认知干预核心对象</div>
       </div>
     </div>
   </div>

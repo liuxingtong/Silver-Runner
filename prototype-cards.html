@@ -29,6 +29,8 @@
     display: flex; align-items: center; justify-content: center;
     padding: 44px 28px;
     font-family: 'DM Mono', monospace;
+    word-break: keep-all;
+    line-break: strict;
   }
 
   .page { width:100%; max-width:1100px; display:flex; flex-direction:column; gap:0; }
@@ -182,8 +184,8 @@
         </svg>
       </div>
       <div class="cf">
-        <div class="cf-tag"><strong>激活 · 临界</strong>对应节点</div>
-        <div class="cf-tag"><strong>单线主导</strong>干预线</div>
+        <div class="cf-tag"><strong>激活 / 临界</strong>节点</div>
+        <div class="cf-tag"><strong>单线</strong>干预</div>
       </div>
     </div>
 
@@ -242,15 +244,15 @@
           <text x="272" y="158" text-anchor="middle" fill="rgba(233,30,140,.35)" font-size="8">P-01</text>
 
           <!-- AC_phys label -->
-          <text x="170" y="160" text-anchor="middle" fill="rgba(245,158,11,.40)" font-size="8">AC_phys ⚠</text>
+          <text x="170" y="160" text-anchor="middle" fill="rgba(245,158,11,.40)" font-size="8">通行弱</text>
 
           <!-- move = intervention label -->
           <text x="170" y="196" text-anchor="middle" fill="rgba(233,30,140,.25)" font-size="9" font-family="DM Mono,monospace">移动即干预</text>
         </svg>
       </div>
       <div class="cf">
-        <div class="cf-tag"><strong>瓶颈节点</strong>衔接带</div>
-        <div class="cf-tag"><strong>低 AC_phys</strong>+双簇交界</div>
+        <div class="cf-tag"><strong>瓶颈</strong>衔接</div>
+        <div class="cf-tag"><strong>触媒簇交界</strong> · 通行弱</div>
       </div>
     </div>
 
@@ -320,8 +322,8 @@
         </svg>
       </div>
       <div class="cf">
-        <div class="cf-tag"><strong>组装规则</strong>非新形态</div>
-        <div class="cf-tag"><strong>P-01 + P-02</strong>的组织方式</div>
+        <div class="cf-tag"><strong>规则</strong>组合</div>
+        <div class="cf-tag"><strong>P-01 + P-02</strong></div>
       </div>
     </div>
 
@@ -331,7 +333,7 @@
   <div class="asm">
     <div class="asm-head">
       <span class="asm-label">嵌套逻辑</span>
-      <span class="asm-sub">P-01 是基本粒子 · P-02 连通孤岛 · P-03 定义规则</span>
+      <span class="asm-sub">P-01 点 · P-02 连 · P-03 场</span>
     </div>
     <svg viewBox="0 0 1060 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
       <defs>

@@ -28,6 +28,8 @@ html, body {
   background: var(--bg);
   font-family: 'Noto Sans SC', system-ui, sans-serif;
   min-height: 100vh;
+  word-break: keep-all;
+  line-break: strict;
 }
 body::before {
   content: '';
@@ -50,12 +52,12 @@ body::before {
 .hd-bar { width:2px; background:var(--r); border-radius:1px; align-self:stretch; flex-shrink:0; }
 .hd-eye { font-family:'Space Grotesk',sans-serif; font-size:8.5px; letter-spacing:.22em; text-transform:uppercase; color:var(--r50); margin-bottom:4px; }
 .hd-title { font-family:'Space Grotesk',sans-serif; font-size:21px; font-weight:700; color:var(--t1); letter-spacing:-.02em; margin-bottom:3px; }
-.hd-sub { font-size:11px; color:var(--t2); }
+.hd-sub { font-size:11px; color:var(--t2); white-space:nowrap; }
 
 /* ── DIAGRAM CONTAINER ───────────────── */
 #diag {
   position: relative;
-  padding-bottom: 80px; /* room for bypass arrow */
+  padding-bottom: 80px;
 }
 #asvg {
   position: absolute; top:0; left:0;
@@ -120,7 +122,8 @@ body::before {
 .mg:last-child { margin-bottom: 0; }
 .mg::before { content:''; position:absolute; top:0; left:0; width:2px; height:100%; background:var(--r50); }
 .mg-name { font-family:'Space Grotesk',sans-serif; font-size:7.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--r50); margin-bottom:4px; }
-.mg-tags { font-family:'Space Grotesk',sans-serif; font-size:8.5px; color:var(--t2); line-height:1.6; }
+.mg-tags { font-family:'Space Grotesk',sans-serif; font-size:8.5px; color:var(--t2); line-height:1.55; display:flex; flex-direction:column; gap:3px; }
+.mg-line { display:block; white-space:nowrap; }
 
 /* ── CARD 3 · MOUNT ──────────────────── */
 .mr {
@@ -130,7 +133,7 @@ body::before {
 }
 .mr:last-child { margin-bottom: 0; }
 .mr-k { font-size:9.5px; color:var(--t2); }
-.mr-v { font-family:'Space Grotesk',sans-serif; font-size:8px; color:var(--r50); }
+.mr-v { font-family:'Space Grotesk',sans-serif; font-size:8px; color:var(--r50); white-space:nowrap; }
 
 .node-out {
   margin-top: 7px; padding: 7px;
@@ -146,7 +149,7 @@ body::before {
   text-align:center; padding:10px 8px 8px;
   border-bottom: 1px solid var(--t3); margin-bottom: 7px;
 }
-.cf-eq { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:var(--r); text-shadow:0 0 14px rgba(233,30,140,.3); }
+.cf-eq { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; color:var(--r); text-shadow:0 0 14px rgba(233,30,140,.3); white-space:nowrap; }
 .cf-sub { font-family:'Space Grotesk',sans-serif; font-size:7.5px; color:var(--t2); margin-top:3px; letter-spacing:.04em; }
 
 .cc {
@@ -166,7 +169,7 @@ body::before {
 .ca .cc-l { color:var(--r30); }
 .cc-info {}
 .cc-name { font-size:10px; font-weight:500; color:var(--t1); }
-.cc-form { font-family:'Space Grotesk',sans-serif; font-size:7.5px; color:var(--r30); margin-top:1px; }
+.cc-form { font-family:'Space Grotesk',sans-serif; font-size:7.5px; color:var(--r30); margin-top:1px; white-space:nowrap; }
 
 .csvi-out {
   margin-top: 6px; padding: 6px 8px;
@@ -226,23 +229,20 @@ body::before {
 <body>
 <div class="page">
 
-<!-- HEADER -->
 <div class="hd">
   <div class="hd-bar"></div>
   <div>
     <div class="hd-eye">Xujiahui Spatial Intelligence · System Architecture v5.0</div>
     <div class="hd-title">数据系统 · 演化架构</div>
-    <div class="hd-sub">从原始感知到 CSVI 脆弱性评估与 CLD / SD 系统动力学仿真</div>
+    <div class="hd-sub">数据 → 指标与挂载 → CSVI → 因果与仿真</div>
   </div>
 </div>
 
-<!-- DIAGRAM -->
 <div id="diag">
   <svg id="asvg"></svg>
 
   <div class="stage-row">
 
-    <!-- ① 原始数据源 -->
     <div class="card">
       <div class="card-hd"><span class="cn">01</span><span class="ct">原始数据源</span></div>
       <div class="card-body">
@@ -322,30 +322,28 @@ body::before {
       </div>
     </div>
 
-    <!-- ② 衍生指标 -->
     <div class="card">
       <div class="card-hd"><span class="cn">02</span><span class="ct">衍生指标</span></div>
       <div class="card-body">
         <div class="mg" id="m-perc">
           <div class="mg-name">感知质量</div>
-          <div class="mg-tags">GVI · SVF · ART_Score<br>Motor_Pressure · Complexity<br>Shade · Ped_Friendly</div>
+          <div class="mg-tags"><span class="mg-line">GVI · SVF · ART_Score</span><span class="mg-line">Motor_Pressure · Complexity</span><span class="mg-line">Shade · Ped_Friendly</span></div>
         </div>
         <div class="mg" id="m-demo">
           <div class="mg-name">人口分层</div>
-          <div class="mg-tags">pop_65+ · pop_60_64<br>pop_15_59 · pop_0_14 · N_GC</div>
+          <div class="mg-tags"><span class="mg-line">pop_65+ · pop_60_64</span><span class="mg-line">pop_15_59 · pop_0_14 · N_GC</span></div>
         </div>
         <div class="mg" id="m-spatial">
           <div class="mg-name">空间结构</div>
-          <div class="mg-tags">landuse_shannon · green_rate<br>poi_social · medical · culture</div>
+          <div class="mg-tags"><span class="mg-line">landuse_shannon · green_rate</span><span class="mg-line">poi_social · medical · culture</span></div>
         </div>
         <div class="mg" id="m-topo">
           <div class="mg-name">路网拓扑</div>
-          <div class="mg-tags">α · β · γ · 交叉口密度<br>edge_traffic_pressure</div>
+          <div class="mg-tags"><span class="mg-line">α · β · γ · 交叉口密度</span><span class="mg-line">edge_traffic_pressure</span></div>
         </div>
       </div>
     </div>
 
-    <!-- ③ 路网挂载 -->
     <div class="card">
       <div class="card-hd"><span class="cn">03</span><span class="ct">路网统一挂载</span></div>
       <div class="card-body">
@@ -376,13 +374,12 @@ body::before {
       </div>
     </div>
 
-    <!-- ④ CSVI 模型 -->
     <div class="card">
       <div class="card-hd"><span class="cn">04</span><span class="ct">CSVI 模型</span></div>
       <div class="card-body">
         <div class="cf">
           <div class="cf-eq">CSVI = E × S ÷ (AC+1)</div>
-          <div class="cf-sub">认知–社会脆弱性指数 · 边级改造优先级</div>
+          <div class="cf-sub">认知–社会脆弱性指数</div>
         </div>
         <div class="cc ce" id="csvi-e">
           <span class="cc-l">E</span>
@@ -416,7 +413,6 @@ body::before {
       </div>
     </div>
 
-    <!-- ⑤ CLD · SD 仿真 -->
     <div class="card">
       <div class="card-hd"><span class="cn">05</span><span class="ct">CLD · SD 仿真</span></div>
       <div class="card-body">
@@ -457,10 +453,9 @@ body::before {
       </div>
     </div>
 
-  </div><!-- /stage-row -->
-</div><!-- /diag -->
+  </div>
+</div>
 
-<!-- LEGEND -->
 <div class="legend">
   <div class="li">
     <svg width="28" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="rgba(233,30,140,.65)" stroke-width="1.2"/>
@@ -470,7 +465,7 @@ body::before {
   <div class="li">
     <svg width="28" height="10"><line x1="0" y1="5" x2="24" y2="5" stroke="rgba(233,30,140,.38)" stroke-width="1.2" stroke-dasharray="4 3"/>
       <polygon points="22,2 28,5 22,8" fill="rgba(233,30,140,.38)"/></svg>
-    跨级注入（CLD 节点直达）
+    跨级连接
   </div>
   <div class="li">
     <div style="width:8px;height:8px;border-radius:50%;background:var(--r1);box-shadow:0 0 5px var(--r)"></div>
@@ -483,7 +478,7 @@ body::before {
   <div class="lver">XJH · 2026 · v5.0</div>
 </div>
 
-</div><!-- /page -->
+</div>
 
 <script>
 (function () {
@@ -506,7 +501,6 @@ body::before {
     svg.style.width  = W + 'px';
     svg.style.height = H + 'px';
 
-    /* ─ markers ─ */
     const defs = mk('defs');
     [
       ['ah',  'rgba(233,30,140,0.7)'],
@@ -521,7 +515,6 @@ body::before {
 
     const Dr = diag.getBoundingClientRect();
 
-    /* position helpers */
     function rp(id, side, frac) {
       const el = document.getElementById(id);
       if (!el) return null;
@@ -534,13 +527,11 @@ body::before {
       return { x, y };
     }
 
-    /* bezier path string */
     function bz(a, b, cp_ratio) {
       const dx = Math.abs(b.x - a.x) * (cp_ratio ?? 0.45);
       return `M${a.x},${a.y} C${a.x+dx},${a.y} ${b.x-dx},${b.y} ${b.x},${b.y}`;
     }
 
-    /* midpoint of cubic bezier at t=0.5 */
     function bzMid(a, b, cp_ratio) {
       const dx = Math.abs(b.x - a.x) * (cp_ratio ?? 0.45);
       const cp1 = { x: a.x + dx, y: a.y };
@@ -552,7 +543,6 @@ body::before {
       };
     }
 
-    /* draw one arrow */
     function arrow(fromId, toId, label, opts) {
       opts = opts || {};
       const from = rp(fromId, 'r', opts.ff);
@@ -561,10 +551,8 @@ body::before {
 
       const g = mk('g');
 
-      /* path */
       let d, mid;
       if (opts.bypass) {
-        // arc below
         const cards = document.querySelectorAll('.card');
         let bottom = 0;
         cards.forEach(c => { const r = c.getBoundingClientRect(); const b = r.bottom - Dr.top; if (b > bottom) bottom = b; });
@@ -586,7 +574,6 @@ body::before {
       });
       g.appendChild(path);
 
-      /* label */
       if (label) {
         const tw = label.length * 5.2 + 10;
         const bg = mk('rect', {
@@ -609,11 +596,6 @@ body::before {
       svg.appendChild(g);
     }
 
-    /* ═══════════════════════════════════════════════
-       ARROW DEFINITIONS
-    ═══════════════════════════════════════════════ */
-
-    /* ── C1 → C2  (6 arrows) ── */
     arrow('s-sv',    'm-perc',    '感知指标');
     arrow('s-pop',   'm-demo',    '人口分层');
     arrow('s-poi',   'm-spatial', 'POI 分类');
@@ -621,25 +603,20 @@ body::before {
     arrow('s-land',  'm-spatial', '用地混合');
     arrow('s-road',  'm-topo',    'α · β · γ');
 
-    /* ── C2 → C3  (4 arrows, no labels) ── */
     arrow('m-perc',    'r-sv',   '');
     arrow('m-demo',    'r-pop',  '');
     arrow('m-spatial', 'r-poi',  '');
     arrow('m-topo',    'r-road', '');
 
-    /* ── C3 → C4 · CSVI inputs (3 arrows) ── */
     arrow('r-pop',  'csvi-e',  '人口×画像');
     arrow('r-sv',   'csvi-s',  'Motor_P · Ped', { ff: 0.35 });
     arrow('r-sv',   'csvi-ac', 'N09 · Ped_Infra', { ff: 0.72 });
 
-    /* ── C3 → C5 · CLD 节点注入 (bypass, dashed) ── */
     arrow('r-nodes', 'cld-nodes', 'N01–N17 节点注入', { bypass:true, bypassOffset:44, ff:0.7, tf:0.5 });
 
-    /* ── C4 → C5 · CSVI → SD ── */
     arrow('csvi-out', 'sd-out', '改造优先级');
   }
 
-  /* run after fonts + layout settle */
   function tryDraw() {
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => setTimeout(draw, 80));

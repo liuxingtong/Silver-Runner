@@ -426,17 +426,16 @@ function Legend() {
   }, []);
   return (
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 10, padding: "14px 16px", backdropFilter: "blur(12px)" }}>
-      <div style={{ fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: "rgba(218,75,163,0.55)", marginBottom: 8 }}>CSVI Color · Size</div>
+      <div style={{ fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: "rgba(218,75,163,0.55)", marginBottom: 8 }}>CSVI · 颜色与大小</div>
       <canvas ref={canvasRef} style={{ width: "100%", height: 10, borderRadius: 5, marginBottom: 4 }} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: T.textDim }}>
         <span>低 CSVI</span><span>高 CSVI</span>
       </div>
-      <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 10, color: T.textDim, lineHeight: 1.6 }}>
-        <span style={{ color: T.accent, fontWeight: 600 }}>CSVI</span> = E × S ÷ (AC + 1)<br />
-        横轴 <span style={{ color: T.accent }}>W_work</span> = N_YP × Q<br />
-        纵轴 <span style={{ color: T.accent }}>W_elder</span> = E × (AC_phys+1)<br />
-        <span style={{ opacity: 0.5, fontSize: 9 }}>气泡半径 ∝ √CSVI · 颜色 ∝ CSVI 归一化</span><br />
-        <span style={{ opacity: 0.45, fontSize: 9 }}>与节点地图一致：每条边含 P_elder、P_work（研究区内经验分位），W 轴 Jenks 分档在分位上计算。</span>
+      <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 10, color: T.textDim, lineHeight: 1.65, wordBreak: "keep-all", lineBreak: "strict" }}>
+        <div style={{ whiteSpace: "nowrap" }}><span style={{ color: T.accent, fontWeight: 600 }}>CSVI</span> = E × S ÷ (AC + 1)</div>
+        <div style={{ whiteSpace: "nowrap" }}>横轴 <span style={{ color: T.accent }}>W_work</span> = N_YP × Q</div>
+        <div style={{ whiteSpace: "nowrap" }}>纵轴 <span style={{ color: T.accent }}>W_elder</span> = E × (AC_phys+1)</div>
+        <div style={{ opacity: 0.5, fontSize: 9, marginTop: 4 }}>点的大小与颜色表示 CSVI 高低。</div>
       </div>
     </div>
   );
@@ -453,7 +452,7 @@ function StatsCard({ data }) {
   }), [data]);
   return (
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 10, padding: "14px 16px", backdropFilter: "blur(12px)" }}>
-      <div style={{ fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: "rgba(218,75,163,0.55)", marginBottom: 10 }}>Statistics</div>
+      <div style={{ fontSize: 9, letterSpacing: 2, textTransform: "uppercase", color: "rgba(218,75,163,0.55)", marginBottom: 10 }}>统计</div>
       <StatRow label="Edges" val={stats.n.toLocaleString()} />
       <StatRow label="μ(CSVI)" val={stats.meanCSVI.toFixed(4)} />
       <StatRow label="σ(CSVI)" val={stats.stdCSVI.toFixed(4)} />
@@ -482,13 +481,11 @@ function pearsonR(x, y) {
 }
 
 /* ═══════════════════ MAIN APP ═══════════════════ */
-/** 与项目根目录 cld_priority.csv 同步到 public/ 后，由 Vite 提供静态资源 */
 const CLD_PRIORITY_CSV = `${import.meta.env.BASE_URL}cld_priority.csv`;
 
 export default function App() {
   const [data, setData] = useState([]);
   const [hovered, setHovered] = useState(null);
-  /** loading：首屏拉取 CLD；cld：来自 cld_priority.csv；demo：拉取失败回退；upload：用户覆盖 */
   const [dataSource, setDataSource] = useState("loading");
   const containerRef = useRef(null);
   const [dims, setDims] = useState({ w: 900, h: 600 });
@@ -598,7 +595,8 @@ export default function App() {
   return (
     <div ref={containerRef} style={{
       width: "100%", height: "100vh", background: T.bg,
-      fontFamily: T.font, color: T.text, display: "flex", flexDirection: "column", overflow: "hidden"
+      fontFamily: T.font, color: T.text, display: "flex", flexDirection: "column", overflow: "hidden",
+      wordBreak: "keep-all", lineBreak: "strict",
     }}>
       {/* — Google Fonts — */}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');`}</style>
@@ -612,13 +610,11 @@ export default function App() {
       }}>
         <div>
           <div style={{ fontSize: 9, letterSpacing: 3, textTransform: "uppercase", color: "rgba(218,75,163,0.6)", marginBottom: 2 }}>
-            CSVI × Quadrant Mapping · Xujiahui Age-Friendly Retrofit
+            停留意愿 · 四象限
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>
-            <span style={{ color: T.accent }}>四象限</span> · CSVI 脆弱性叠加{" "}
-            <span style={{ fontSize: 12, fontWeight: 300, color: T.textDim, fontStyle: "italic" }}>
-              W_elder × W_work → E / S / AC decomposition
-            </span>
+            <span style={{ color: T.accent }}>四象限</span>
+            <span style={{ fontSize: 12, fontWeight: 400, color: T.textDim, marginLeft: 8 }}>CSVI 与停留结构</span>
           </h1>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -680,7 +676,7 @@ export default function App() {
             fontSize: 9, letterSpacing: 2, textTransform: "uppercase",
             color: "rgba(218,75,163,0.5)", padding: "4px 0 0",
           }}>
-            Quadrant Decomposition — Mean E / S / AC
+            各象限 · E / S / AC 均值
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -697,13 +693,13 @@ export default function App() {
             backdropFilter: "blur(8px)"
           }}>
             <span style={{ color: "rgba(218,75,163,0.55)", letterSpacing: 1.5, fontSize: 9, textTransform: "uppercase" }}>
-              Interpretation Key
+              象限含义
             </span>
-            <div style={{ marginTop: 6 }}>
-              <b style={{ color: T.accent }}>Q2 左上</b> W_elder↑ W_work↓ → 老年人聚集但缺代际接触，S_contact 高，<b style={{ color: T.text }}>改造最优先</b><br/>
-              <b style={{ color: T.accent }}>Q1 右上</b> 双高 → 停留潜力大，需维护而非改造<br/>
-              <b style={{ color: T.accent }}>Q3 左下</b> 双低 → 低活力路段，结构性问题<br/>
-              <b style={{ color: T.accent }}>Q4 右下</b> W_work↑ W_elder↓ → 工作主导，老年人被挤出
+            <div style={{ marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div><b style={{ color: T.accent }}>Q2 左上</b> 老年停留偏多、工作人群偏少 → 代际接触弱，<b style={{ color: T.text }}>优先改造</b></div>
+              <div><b style={{ color: T.accent }}>Q1 右上</b> 两侧停留都高 → 潜力大，偏维护</div>
+              <div><b style={{ color: T.accent }}>Q3 左下</b> 两侧都低 → 活力弱</div>
+              <div><b style={{ color: T.accent }}>Q4 右下</b> 工作人群偏多、老年偏少 → 易被挤出</div>
             </div>
           </div>
         </div>

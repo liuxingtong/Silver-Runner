@@ -33,6 +33,8 @@
     min-height: 100vh;
     min-height: 100dvh;
     padding: 40px 28px;
+    word-break: keep-all;
+    line-break: strict;
   }
 
   .wrap { width: 100%; max-width: 1080px; display: flex; flex-direction: column; gap: 12px; }
@@ -205,6 +207,7 @@
     font-family:'Space Grotesk',sans-serif;
     font-size:17px; font-weight:800; color:var(--t1);
     text-align:center; line-height:1.35; letter-spacing:-.01em;
+    white-space:nowrap;
   }
   .result-formula .r { color:var(--rl); }
   .result-expand {
@@ -214,6 +217,7 @@
     background: rgba(233,30,140,.05); border: 1px solid rgba(233,30,140,.12);
     border-radius: 6px; width:100%;
   }
+  .result-expand .re-line { display: block; white-space: nowrap; }
 
   /* ── bottom interpretation ── */
   .interp {
@@ -468,12 +472,12 @@
       </div>
 
       <div class="result-formula">
-        <span class="r">E</span> × <span class="r">S</span><br>
-        ÷ (<span class="r">AC</span>+1)
+        <span class="r">E</span> × <span class="r">S</span> ÷ (<span class="r">AC</span>+1)
       </div>
 
       <div class="result-expand">
-        [Σwₖnₖ] × [S_env + S_contact]<br>÷ [AC_phys × AC_social]
+        <span class="re-line">[Σwₖnₖ] × [S_env + S_contact]</span>
+        <span class="re-line">÷ [AC_phys × AC_social]</span>
       </div>
     </div>
 

@@ -13,6 +13,9 @@
 | **`csvi-model.html`**、`dual-line-framework.html`、`feedback-loop.html`、`prototype-cards.html`、`xujiahui-pole-cards.html`、`node-type-cards (1).html` | 模型与卡片页。 |
 | **`stay_willingness_matrix.html`** | 停留意愿矩阵入口（Vite 构建另有配置）。 |
 | **`xujiahui-osm-boundary.js`** | 研究区边界：仅大徐家汇四街道并集（`data/daxujiahui-four-streets-union.geojson`），样式同原徐汇玫红虚线；供各 `map_*.html` 共用。 |
+| **`catalyst-seam-clusters.js`** | 触媒 DBSCAN 与接缝（多源 BFS）；由地图与场域页引用。 |
+| **`corridor-bottleneck-routing.js`** | **b(e)**、瓶颈（优先落在廊道边集上）、**簇 medoid 间加权廊道**；`map_intervention_nodes` 不绘廊道线，`field_system_selection` 玫红折线绘路径（详见手册 §5.7）。 |
+| **`cluster-field-circles.js`** | 双半径：**r<sub>内</sub>=min(叙事,点云)**、**r<sub>外</sub>=max**；廊道 medoid 用外圆；场域页实线核心 + 虚线缓冲。 |
 | **`cld_priority.csv`** | 主 CLD/CSVI 边表（当前多为徐汇筛选后数据）；备份可命名如 `cld_priority_beifan.csv`。 |
 | **`package.json`** / **`vite.config.js`** | 前端依赖与 Vite 构建（`dist/`）。 |
 
@@ -20,7 +23,7 @@
 
 | 路径 | 用途 |
 |------|------|
-| **`data/`** | 静态地理数据：`xuhui-district-R1278188.geojson`（全区）；`daxujiahui-four-streets-union.geojson`（徐/天平/湖南/枫林四街道 OSM 并集，见 `npm run fetch:daxujiahui-4`）。 |
+| **`data/`** | 静态地理数据：`xuhui-district-R1278188.geojson`（全区）；`daxujiahui-four-streets-union.geojson`（四街道并集，`npm run fetch:daxujiahui-4`）。**`field-parcels.geojson`** 仅作其它实验/制图参考（主流程已不用地块）。 |
 | **`docs/`** | 手册与说明（本文件、`徐家汇数据分析完整手册.md` 等）。 |
 | **`profiles/`** | 人物画像 HTML 与插图。 |
 | **`public/`** | 构建时拷贝到站点根的资源（如 `sync:cld` 同步的 `cld_priority.csv`）。 |

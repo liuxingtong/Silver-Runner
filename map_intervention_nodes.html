@@ -8,6 +8,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="xujiahui-osm-boundary.js"></script>
+<script src="cluster-field-circles.js"></script>
+<script src="catalyst-seam-clusters.js"></script>
+<script src="corridor-bottleneck-routing.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
@@ -20,7 +23,7 @@
   }
 
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans','Noto Sans SC',sans-serif}
+  html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans','Noto Sans SC',sans-serif;word-break:keep-all;line-break:strict;}
   #map{width:100%;height:100%;z-index:1}
   .leaflet-control-attribution{display:none!important}
   .leaflet-control-zoom a{
@@ -253,7 +256,7 @@
     <span class="hl-b">瓶颈</span> ·
     <span class="hl-c">临界</span> — 三类干预节点
   </h1>
-  <div class="sub">底图路网为 CSVI 高值抽样；<strong>激活 / 临界 / 瓶颈</strong>三类节点均绘制<strong>全部分类结果</strong>。瓶颈 = AC_phys≤全域中位 ∩ 激活顶点 k-means 两簇在路网上的 BFS 衔接带。</div>
+  <div class="sub">底图突出 CSVI 较高路段；<strong>激活 / 临界 / 瓶颈</strong>三类节点为<strong>全量</strong>标注。</div>
 </div>
 
 <div class="legend-panel">
@@ -264,26 +267,26 @@
       <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,2 18,17 2,17" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
       <div class="lg-label">
         A₁ · 老年人主导型
-        <span class="lg-sub">W_elder高 W_work低 → 认知恢复线主导</span>
+        <span class="lg-sub">老年停留偏多、工作人群偏少</span>
       </div>
     </div>
     <div class="lg-item">
       <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,18 18,3 2,3" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
       <div class="lg-label">
         A₂ · 工作人口主导型
-        <span class="lg-sub">W_work高 W_elder低 → 人机共生线主导</span>
+        <span class="lg-sub">工作人群偏多、老年偏少</span>
       </div>
     </div>
     <div class="lg-item">
       <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,1 12.5,7 19,7 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7 7.5,7" fill="#e91e8c" fill-opacity="0.7" stroke="#e91e8c" stroke-width="1.5"/></svg></div>
       <div class="lg-label">
         A₃ · 双向停留型
-        <span class="lg-sub">两者都高 → 稀缺，双线共同作用</span>
+        <span class="lg-sub">两侧停留都高</span>
       </div>
     </div>
     <div class="lg-item" style="margin-top:2px">
       <div class="lg-symbol" style="width:20px"></div>
-      <div class="lg-label" style="font-size:10px;color:rgba(255,255,255,0.5)">地图上：<strong>全部</strong>激活边段（不按 priority 抽样）</div>
+      <div class="lg-label" style="font-size:10px;color:rgba(255,255,255,0.5)">激活边段：<strong>全量</strong></div>
     </div>
   </div>
   <hr class="lg-divider">
@@ -293,9 +296,9 @@
     <div class="lg-item">
       <div class="lg-symbol"><svg width="20" height="20"><rect x="3" y="3" width="14" height="14" rx="2" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
       <div class="lg-label">
-        AC_phys 较低 50%（≤ 全域中位）
-        <span class="lg-sub">激活顶点 k-means(k=2) 两簇作种子，路网上无权 BFS 扩张交界（Voronoi 式），回退时经度对半切</span>
-        <span class="lg-sub" style="margin-top:4px;color:rgba(255,255,255,0.5)">地图上：<strong>全部</strong>瓶颈边段（不按 priority 抽样）</span>
+        廊道边集上 ∩ 低 AC_phys ∩ <strong>b(e)≥τ</strong>（边级；与簇间廊道几何一致）
+        <span class="lg-sub">b=0.45·nPri+0.35·接缝+0.2·脆弱AC；本页不单独绘廊道折线</span>
+        <span class="lg-sub" style="margin-top:4px;color:rgba(255,255,255,0.5)">瓶颈边段：<strong>全量</strong></span>
       </div>
     </div>
   </div>
@@ -306,9 +309,9 @@
     <div class="lg-item">
       <div class="lg-symbol"><svg width="20" height="20"><circle cx="10" cy="10" r="6.5" fill="rgba(233,30,140,0.22)" stroke="#e91e8c" stroke-width="2"/></svg></div>
       <div class="lg-label">
-        象限临界点
-        <span class="lg-sub">CSVI中等、S_contact主导、W_work高W_elder低，单干预可撬动转变</span>
-        <span class="lg-sub" style="margin-top:4px;color:rgba(255,255,255,0.5)">地图上：<strong>全部</strong>临界边段（不按 priority 抽样）</span>
+        象限临界
+        <span class="lg-sub">接触维度偏高、工作停留高而老年偏少，单点撬动潜力大</span>
+        <span class="lg-sub" style="margin-top:4px;color:rgba(255,255,255,0.5)">临界边段：<strong>全量</strong></span>
       </div>
     </div>
   </div>
@@ -381,8 +384,8 @@
   <div class="fp-title">分类逻辑 Classification</div>
   <div class="fp-row"><em class="c-a">W_elder</em> = E × (AC_phys+1)</div>
   <div class="fp-row"><em class="c-a">W_work</em> = N_YP × Q（Q 同列 <strong>N08</strong>，与停留意愿矩阵一致）</div>
-  <div class="fp-row" style="margin-top:6px"><em class="c-b">瓶颈</em>：AC_phys ≤ 全域中位（较低半）</div>
-  <div class="fp-row">且位于「两簇激活」路网 BFS 交界（种子 = 激活顶点 k-means k=2，退化则经度对半）</div>
+  <div class="fp-row" style="margin-top:6px"><em class="c-b">瓶颈</em>：廊道边集 ∩ AC_phys ≤ 中位 ∩ <strong>b(e)≥τ</strong>（无廊道时回退接缝∩同条件）</div>
+  <div class="fp-row">b=0.45·nPri+0.35·接缝+0.2·脆弱AC；廊道=簇 medoid 间 w=0.55·l̂+0.45·(1−b) 最短路（本页不绘线）</div>
   <div class="fp-row" style="margin-top:6px"><em class="c-c">临界</em>：CSVI中等</div>
   <div class="fp-row">S_contact/S &gt; 0.6（放宽 10%）∧ W_work高</div>
   <div class="fp-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:10px;color:rgba(255,255,255,0.25)">
@@ -760,26 +763,7 @@ edges.forEach(e => {
   e.nodeType = null;
 });
 
-// --- BOTTLENECK: AC_phys 较低 50% ∧ 位于「两簇激活」路网扩张交界（多源 BFS Voronoi 分界）---
-function edgeMetricLength(ev) {
-  const dx = ev.to.lon - ev.from.lon;
-  const dy = ev.to.lat - ev.from.lat;
-  return Math.hypot(dx, dy) || 1e-12;
-}
-
-function buildAdjacencyForRouting(edgeList) {
-  const adj = new Map();
-  for (const ev of edgeList) {
-    const w = edgeMetricLength(ev);
-    for (const [a, b] of [[ev.u, ev.v], [ev.v, ev.u]]) {
-      if (!adj.has(a)) adj.set(a, []);
-      adj.get(a).push({ nb: b, edge: ev, w });
-    }
-  }
-  return adj;
-}
-
-/** 激活边涉及的顶点 → 端点坐标（用于两簇种子） */
+// --- BOTTLENECK: AC_phys 较低 50% ∧ b≥τ；有簇间廊道时取廊道边集，否则回退接缝（见 corridor-bottleneck-routing.js）---
 function vertPosFromActivatedEdges(activatedEdgeList) {
   const m = new Map();
   for (let i = 0; i < activatedEdgeList.length; i++) {
@@ -790,172 +774,37 @@ function vertPosFromActivatedEdges(activatedEdgeList) {
   return m;
 }
 
-/** 经纬度 → 局部分米近似平面坐标（纬度作 cos 缩放），便于空间聚类 */
-function vertToPlanarXY(lon, lat) {
-  const kLon = Math.cos(lat * Math.PI / 180);
-  return [lon * kLon, lat];
-}
-
-function dist2xy(ax, ay, bx, by) {
-  const dx = ax - bx;
-  const dy = ay - by;
-  return dx * dx + dy * dy;
-}
-
-/**
- * 对激活顶点做 k-means(k=2)，返回与 verts 顺序一致的标签 0/1；失败时返回 null。
- */
-function kMeans2LabelsFromVerts(verts, vertPos) {
-  const n = verts.length;
-  if (n < 2) return null;
-  const xy = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const p = vertPos.get(verts[i]);
-    const lon = p && Number.isFinite(p.lon) ? p.lon : 0;
-    const lat = p && Number.isFinite(p.lat) ? p.lat : 0;
-    xy[i] = vertToPlanarXY(lon, lat);
-  }
-  let bestI = 0,
-    bestJ = 1,
-    bestD = -1;
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      const d = dist2xy(xy[i][0], xy[i][1], xy[j][0], xy[j][1]);
-      if (d > bestD) {
-        bestD = d;
-        bestI = i;
-        bestJ = j;
-      }
-    }
-  }
-  if (bestD < 1e-20) return null;
-  let c0x = xy[bestI][0],
-    c0y = xy[bestI][1];
-  let c1x = xy[bestJ][0],
-    c1y = xy[bestJ][1];
-  const labels = new Uint8Array(n);
-  for (let iter = 0; iter < 40; iter++) {
-    for (let i = 0; i < n; i++) {
-      const d0 = dist2xy(xy[i][0], xy[i][1], c0x, c0y);
-      const d1 = dist2xy(xy[i][0], xy[i][1], c1x, c1y);
-      labels[i] = d0 <= d1 ? 0 : 1;
-    }
-    let s0x = 0,
-      s0y = 0,
-      n0 = 0;
-    let s1x = 0,
-      s1y = 0,
-      n1 = 0;
-    for (let i = 0; i < n; i++) {
-      if (labels[i] === 0) {
-        s0x += xy[i][0];
-        s0y += xy[i][1];
-        n0++;
-      } else {
-        s1x += xy[i][0];
-        s1y += xy[i][1];
-        n1++;
-      }
-    }
-    if (n0 === 0 || n1 === 0) return null;
-    const nc0x = s0x / n0,
-      nc0y = s0y / n0;
-    const nc1x = s1x / n1,
-      nc1y = s1y / n1;
-    if (
-      Math.abs(nc0x - c0x) < 1e-9 &&
-      Math.abs(nc0y - c0y) < 1e-9 &&
-      Math.abs(nc1x - c1x) < 1e-9 &&
-      Math.abs(nc1y - c1y) < 1e-9
-    )
-      break;
-    c0x = nc0x;
-    c0y = nc0y;
-    c1x = nc1x;
-    c1y = nc1y;
-  }
-  return labels;
-}
-
-/** 经度排序后对半切分（k-means 退化时的回退） */
-function seedLabelsLongitudeFallback(verts, vertPos) {
-  const sorted = [...verts];
-  sorted.sort((a, b) => {
-    const pa = vertPos.get(a),
-      pb = vertPos.get(b);
-    return (pa ? pa.lon : 0) - (pb ? pb.lon : 0);
-  });
-  const half = Math.floor(sorted.length / 2);
-  const seedLabel = new Map();
-  if (half < 1 || half >= sorted.length) return seedLabel;
-  for (let i = 0; i < half; i++) seedLabel.set(sorted[i], 0);
-  for (let i = half; i < sorted.length; i++) seedLabel.set(sorted[i], 1);
-  return seedLabel;
-}
-
-/**
- * 激活顶点先做平面 k-means(k=2) 得两簇种子（贴合空间团簇）；失败则回退经度对半切。
- * 随后在路网上无权多源 BFS 扩张，取两端簇号不同的边为 Voronoi 式衔接带，再 ∩ 低 AC_phys 得瓶颈。
- */
-function collectActivationVoronoiSeamEdges(allEdges, activatedEdgeList, vertPos) {
-  const seam = new Set();
-  if (!activatedEdgeList.length || !allEdges.length) return seam;
-
-  const vertSet = new Set();
-  for (let i = 0; i < activatedEdgeList.length; i++) {
-    const ae = activatedEdgeList[i];
-    vertSet.add(ae.u);
-    vertSet.add(ae.v);
-  }
-  const verts = [...vertSet];
-  if (verts.length < 2) return seam;
-
-  let seedLabel = new Map();
-  const km = kMeans2LabelsFromVerts(verts, vertPos);
-  if (km) {
-    for (let i = 0; i < verts.length; i++) seedLabel.set(verts[i], km[i]);
-  } else {
-    seedLabel = seedLabelsLongitudeFallback(verts, vertPos);
-  }
-  if (seedLabel.size < 2) return seam;
-
-  const adj = buildAdjacencyForRouting(allEdges);
-  const owner = new Map(seedLabel);
-  const q = [...seedLabel.keys()];
-  let qi = 0;
-  while (qi < q.length) {
-    const u = q[qi++];
-    const lu = owner.get(u);
-    const outs = adj.get(u);
-    if (!outs) continue;
-    for (let i = 0; i < outs.length; i++) {
-      const nb = outs[i].nb;
-      if (!owner.has(nb)) {
-        owner.set(nb, lu);
-        q.push(nb);
-      }
-    }
-  }
-
-  for (let i = 0; i < allEdges.length; i++) {
-    const ev = allEdges[i];
-    const a = owner.get(ev.u);
-    const b = owner.get(ev.v);
-    if (a !== undefined && b !== undefined && a !== b) seam.add(ev);
-  }
-  return seam;
-}
-
 const vertPosAct = vertPosFromActivatedEdges(activatedEdges);
-const connectorSeamSet = collectActivationVoronoiSeamEdges(edges, activatedEdges, vertPosAct);
+const aligned = CatalystSeamClusters.collectAlignedSeamEdgesWithDb(
+  edges,
+  activatedEdges,
+  criticalEdges,
+  vertPosAct
+);
+const connectorSeamSet = aligned.seam;
 
-edges.forEach(e => {
-  if (e.nodeType) return;
-  if (e.csvi_AC_phys > acPhys50) return;
-  if (!connectorSeamSet.has(e)) return;
+/** 与场域页 10 ha 总量一致，供 DBSCAN 簇分叙事面积 */
+const MAP_FIELD_TOTAL_AREA_M2 = 100000;
+const clusterCirclesByClusterLabel =
+  typeof ClusterFieldCircles !== 'undefined'
+    ? ClusterFieldCircles.dbscanCirclesForCorridor(aligned.db, MAP_FIELD_TOTAL_AREA_M2)
+    : null;
+
+const routePack = CorridorBottleneck.compute({
+  edges,
+  activatedEdges,
+  criticalEdges,
+  vertPos: vertPosAct,
+  connectorSeamSet,
+  acPhys50,
+  catalystDb: aligned.db,
+  clusterCirclesByClusterLabel
+});
+for (let ri = 0; ri < routePack.bottleneckEdges.length; ri++) {
+  const e = routePack.bottleneckEdges[ri];
   e.nodeType = 'bottleneck';
   bottleneckEdges.push(e);
-});
+}
 
 // ============================================================
 //  RENDER
@@ -1112,7 +961,7 @@ const nodeStyles = {
   act_both:   { typeCN: '激活·双向停留型', typeEN: 'Activated A₃', typeClass: 't-act',
                 note: '两者都高 → 稀缺，双线共同作用' },
   bottleneck: { typeCN: '瓶颈', typeEN: 'Bottleneck', typeClass: 't-bot',
-                note: 'AC_phys ≤ 全域中位；激活顶点空间 k=2 聚类 + BFS 衔接带' },
+                note: '廊道边∩低AC_phys∩b(e)≥τ（无廊道时接缝∩同条件）；b 同上' },
   critical:   { typeCN: '临界', typeEN: 'Critical', typeClass: 't-cri',
                 note: 'CSVI中等，S_contact主导，单干预撬动' },
 };
@@ -1181,14 +1030,15 @@ document.getElementById('cnt-activated').textContent =
 document.getElementById('cnt-bottleneck').textContent =
   nBot ? `${nBot} 全部` : '0';
 document.getElementById('cnt-critical').textContent = nCri ? `${nCri} 全部` : '0';
+const nCorPaths = routePack.corridorPaths.length;
+const nCorEdges = routePack.corridorEdgeSet.size;
 
 const noteEl = document.getElementById('st-filter-note');
 if (noteEl) {
   noteEl.textContent =
-    `底图路网：priority 前 ${MAP_DISPLAY_TOP_FRAC * 100}%（≥ ${mapPrioMin.toFixed(4)}），共 ${nDrawn} 条。` +
-    `节点：激活 ${nAct}、临界 ${nCri}、瓶颈 ${nBot} 均为分类全量绘制。` +
-    ` W_elder / W_work 先转研究区内经验分位再 Jenks 分档（两轴「高档」可比）。` +
-    ` 全表 ${edges.length} 条边参与分类。`;
+    `底图：CSVI 较高路段约 ${MAP_DISPLAY_TOP_FRAC * 100}%（${nDrawn} 条）。` +
+    ` 节点：激活 ${nAct}、临界 ${nCri}、瓶颈 ${nBot}（全量，与廊道 ${nCorPaths} 条 / ${nCorEdges} 边几何对齐，不绘廊道线）。` +
+    ` 共 ${edges.length} 条边参与分类。`;
 }
 
   const extentMarker = [...activatedDrawList, ...bottleneckDrawList, ...criticalDrawList];
@@ -1204,7 +1054,9 @@ if (noteEl) {
   }
 }
 
-loadEdges().then(runPipeline);
+loadEdges().then((edges) => {
+  runPipeline(edges);
+});
 </script>
 </body>
 </html>
