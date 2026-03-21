@@ -1,0 +1,29 @@
+{
+  "name": "cards-viz",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync:cld": "node scripts/sync-cld.mjs",
+    "filter:cld-xuhui": "node scripts/filter-cld-xuhui.mjs",
+    "filter:cld-daxujiahui": "node scripts/filter-cld-daxujiahui.mjs",
+    "fetch:daxujiahui-4": "node scripts/fetch-daxujiahui-four-streets.mjs",
+    "predev": "npm run sync:cld",
+    "dev": "vite",
+    "prebuild": "npm run sync:cld",
+    "build": "vite build",
+    "persona:png": "node scripts/persona-png-transparent.mjs"
+  },
+  "dependencies": {
+    "d3": "^7.9.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@turf/turf": "^7.3.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "osmtogeojson": "^3.0.0-beta.5",
+    "sharp": "^0.34.5",
+    "vite": "^5.4.11"
+  }
+}

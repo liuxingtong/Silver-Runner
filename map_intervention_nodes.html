@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>干预节点分类 · Intervention Node Typology</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="xujiahui-osm-boundary.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --magenta: #e91e8c;
+    --magenta-bright: #ff4dad;
+    --magenta-soft: rgba(233, 30, 140, 0.75);
+    --magenta-dim: rgba(233, 30, 140, 0.45);
+    --magenta-bg: rgba(233, 30, 140, 0.12);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans','Noto Sans SC',sans-serif}
+  #map{width:100%;height:100%;z-index:1}
+  .leaflet-control-attribution{display:none!important}
+  .leaflet-control-zoom a{
+    background:rgba(12,12,14,0.94)!important;
+    color:var(--magenta-bright)!important;
+    border-color:rgba(233,30,140,0.35)!important;
+  }
+  .leaflet-control-zoom a:hover{background:rgba(233,30,140,0.15)!important;}
+
+  /* --- Header --- */
+  .panel-header{
+    position:fixed;top:0;left:0;right:0;
+    padding:20px 28px 18px;
+    background:linear-gradient(180deg,rgba(8,8,10,0.94) 0%,rgba(8,8,10,0.7) 65%,transparent 100%);
+    z-index:1000;pointer-events:none;
+  }
+  .panel-header .tag{
+    font-size:10px;letter-spacing:3px;text-transform:uppercase;
+    color:var(--magenta-dim);font-weight:500;margin-bottom:4px;
+  }
+  .panel-header h1{font-size:22px;font-weight:700;color:#f0f0f0;letter-spacing:-0.3px}
+  .panel-header h1 .hl-a,
+  .panel-header h1 .hl-b,
+  .panel-header h1 .hl-c{color:var(--magenta-bright)}
+  .panel-header .sub{
+    font-size:12px;color:rgba(255,255,255,0.4);font-weight:300;
+    font-style:italic;margin-top:3px;
+  }
+
+  /* --- Legend panel --- */
+  .legend-panel{
+    position:fixed;top:100px;left:28px;
+    background:rgba(12,12,14,0.94);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    padding:18px 20px;
+    z-index:1000;
+    backdrop-filter:blur(14px);
+    width:280px;
+    max-height:calc(100vh - 140px);
+    overflow-y:auto;
+  }
+  .legend-panel::-webkit-scrollbar{width:3px}
+  .legend-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+  .lg-section{margin-bottom:16px}
+  .lg-section:last-child{margin-bottom:0}
+  .lg-title{
+    font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    margin-bottom:10px;font-weight:500;
+  }
+  .lg-title.activated,
+  .lg-title.bottleneck,
+  .lg-title.critical{color:var(--magenta-soft)}
+
+  .lg-item{
+    display:flex;align-items:flex-start;gap:10px;
+    margin-bottom:10px;font-size:11px;line-height:1.45;
+  }
+  .lg-symbol{
+    flex-shrink:0;width:24px;height:24px;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:1px;
+  }
+  .lg-label{color:rgba(255,255,255,0.75)}
+  .lg-label .lg-sub{
+    display:block;font-size:10px;color:rgba(255,255,255,0.35);
+    margin-top:2px;font-style:italic;
+  }
+  .lg-label .lg-count{
+    display:inline-block;margin-left:6px;
+    font-size:10px;font-weight:600;
+    padding:1px 6px;border-radius:8px;
+  }
+
+  .lg-divider{
+    border:none;border-top:1px solid rgba(255,255,255,0.06);
+    margin:14px 0;
+  }
+
+  /* --- Layer toggles --- */
+  .layer-ctrl{
+    position:fixed;top:100px;right:28px;
+    background:rgba(12,12,14,0.94);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    padding:14px 16px;
+    z-index:1000;
+    backdrop-filter:blur(14px);
+    width:220px;
+  }
+  .lc-title{
+    font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    color:rgba(255,255,255,0.3);margin-bottom:10px;
+  }
+  .lc-row{
+    display:flex;align-items:center;gap:8px;
+    margin-bottom:8px;cursor:pointer;
+    font-size:12px;color:rgba(255,255,255,0.6);
+    transition:color 0.2s;
+  }
+  .lc-row:hover{color:#f0f0f0}
+  .lc-check{
+    width:16px;height:16px;border-radius:4px;
+    border:1.5px solid rgba(255,255,255,0.2);
+    display:flex;align-items:center;justify-content:center;
+    transition:all 0.2s;flex-shrink:0;
+  }
+  .lc-check.on{border-color:currentColor}
+  .lc-check.on::after{
+    content:'✓';font-size:10px;color:currentColor;
+  }
+  .lc-row.act .lc-check.on,
+  .lc-row.bot .lc-check.on,
+  .lc-row.cri .lc-check.on{border-color:var(--magenta)}
+  .lc-row.act .lc-check.on::after,
+  .lc-row.bot .lc-check.on::after,
+  .lc-row.cri .lc-check.on::after{color:var(--magenta-bright)}
+
+  .lc-row .lc-label{flex:1}
+  .lc-row .lc-count{
+    font-size:10px;font-weight:600;
+    opacity:0.6;
+  }
+
+  /* --- Stats --- */
+  .stats-panel{
+    position:fixed;bottom:28px;left:28px;
+    background:rgba(12,12,14,0.94);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    padding:16px 20px;
+    z-index:1000;
+    backdrop-filter:blur(14px);
+    width:280px;
+  }
+  .st-title{
+    font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    color:rgba(255,255,255,0.3);margin-bottom:10px;
+  }
+  .st-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .st-cell .st-label{
+    font-size:9px;letter-spacing:1px;text-transform:uppercase;
+    color:rgba(255,255,255,0.25);
+  }
+  .st-cell .st-val{
+    font-size:18px;font-weight:700;letter-spacing:-0.5px;
+  }
+  .st-cell .st-val.c-a,
+  .st-cell .st-val.c-b,
+  .st-cell .st-val.c-c{color:var(--magenta-bright)}
+
+  /* --- Formula --- */
+  .formula-panel{
+    position:fixed;bottom:28px;right:28px;
+    background:rgba(12,12,14,0.94);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    padding:16px 20px;
+    z-index:1000;
+    backdrop-filter:blur(14px);
+    width:260px;
+  }
+  .fp-title{
+    font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    color:rgba(255,255,255,0.3);margin-bottom:10px;
+  }
+  .fp-row{font-size:11px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:4px}
+  .fp-row em{font-style:normal;font-weight:600}
+  .fp-row .c-a,
+  .fp-row .c-b,
+  .fp-row .c-c{color:var(--magenta-bright)}
+
+  /* --- Tooltips --- */
+  .node-tooltip{
+    background:rgba(12,12,14,0.96)!important;
+    border:1px solid rgba(255,255,255,0.15)!important;
+    border-radius:10px!important;
+    padding:12px 16px!important;
+    font-family:'DM Sans','Noto Sans SC',sans-serif!important;
+    font-size:11px!important;
+    color:#f0f0f0!important;
+    box-shadow:0 8px 32px rgba(0,0,0,0.6)!important;
+    max-width:300px!important;
+  }
+  .node-tooltip .tt-type{
+    font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+    font-weight:600;margin-bottom:4px;
+  }
+  .node-tooltip .tt-type.t-act,
+  .node-tooltip .tt-type.t-bot,
+  .node-tooltip .tt-type.t-cri{color:var(--magenta-bright)}
+  .node-tooltip .tt-name{
+    font-size:14px;font-weight:700;margin-bottom:8px;color:#f0f0f0;
+  }
+  .node-tooltip .tt-r{
+    display:flex;justify-content:space-between;gap:14px;
+    margin-bottom:3px;color:rgba(255,255,255,0.45);
+  }
+  .node-tooltip .tt-r b{color:#f0f0f0;font-weight:500}
+  .node-tooltip .tt-sep{
+    border:none;border-top:1px solid rgba(255,255,255,0.08);
+    margin:8px 0;
+  }
+  .node-tooltip .tt-note{
+    font-size:10px;color:rgba(255,255,255,0.35);font-style:italic;line-height:1.4;
+  }
+
+  /* Edge base styling */
+  .base-edge{opacity:0.25}
+
+  .leaflet-tooltip.boundary-tt{
+    background:rgba(12,12,14,0.94)!important;
+    border:1px solid rgba(233,30,140,0.4)!important;
+    color:rgba(255,255,255,0.88)!important;
+    font-size:11px!important;
+    padding:6px 10px!important;
+    border-radius:8px!important;
+    box-shadow:0 4px 20px rgba(0,0,0,0.45)!important;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div class="panel-header">
+  <div class="tag">Intervention Node Typology · 干预节点分类</div>
+  <h1>
+    <span class="hl-a">激活</span> ·
+    <span class="hl-b">瓶颈</span> ·
+    <span class="hl-c">临界</span> — 三类干预节点
+  </h1>
+  <div class="sub">底图路网为 CSVI 高值抽样；<strong>激活 / 临界 / 瓶颈</strong>三类节点均绘制<strong>全部分类结果</strong>。瓶颈 = AC_phys≤全域中位 ∩ 激活顶点 k-means 两簇在路网上的 BFS 衔接带。</div>
+</div>
+
+<div class="legend-panel">
+  <!-- Activated -->
+  <div class="lg-section">
+    <div class="lg-title activated">激活节点 ACTIVATED</div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,2 18,17 2,17" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
+      <div class="lg-label">
+        A₁ · 老年人主导型
+        <span class="lg-sub">W_elder高 W_work低 → 认知恢复线主导</span>
+      </div>
+    </div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,18 18,3 2,3" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
+      <div class="lg-label">
+        A₂ · 工作人口主导型
+        <span class="lg-sub">W_work高 W_elder低 → 人机共生线主导</span>
+      </div>
+    </div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,1 12.5,7 19,7 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7 7.5,7" fill="#e91e8c" fill-opacity="0.7" stroke="#e91e8c" stroke-width="1.5"/></svg></div>
+      <div class="lg-label">
+        A₃ · 双向停留型
+        <span class="lg-sub">两者都高 → 稀缺，双线共同作用</span>
+      </div>
+    </div>
+    <div class="lg-item" style="margin-top:2px">
+      <div class="lg-symbol" style="width:20px"></div>
+      <div class="lg-label" style="font-size:10px;color:rgba(255,255,255,0.5)">地图上：<strong>全部</strong>激活边段（不按 priority 抽样）</div>
+    </div>
+  </div>
+  <hr class="lg-divider">
+  <!-- Bottleneck -->
+  <div class="lg-section">
+    <div class="lg-title bottleneck">瓶颈节点 BOTTLENECK</div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="20" height="20"><rect x="3" y="3" width="14" height="14" rx="2" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
+      <div class="lg-label">
+        AC_phys 较低 50%（≤ 全域中位）
+        <span class="lg-sub">激活顶点 k-means(k=2) 两簇作种子，路网上无权 BFS 扩张交界（Voronoi 式），回退时经度对半切</span>
+        <span class="lg-sub" style="margin-top:4px;color:rgba(255,255,255,0.5)">地图上：<strong>全部</strong>瓶颈边段（不按 priority 抽样）</span>
+      </div>
+    </div>
+  </div>
+  <hr class="lg-divider">
+  <!-- Critical -->
+  <div class="lg-section">
+    <div class="lg-title critical">临界节点 CRITICAL</div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="20" height="20"><circle cx="10" cy="10" r="6.5" fill="rgba(233,30,140,0.22)" stroke="#e91e8c" stroke-width="2"/></svg></div>
+      <div class="lg-label">
+        象限临界点
+        <span class="lg-sub">CSVI中等、S_contact主导、W_work高W_elder低，单干预可撬动转变</span>
+        <span class="lg-sub" style="margin-top:4px;color:rgba(255,255,255,0.5)">地图上：<strong>全部</strong>临界边段（不按 priority 抽样）</span>
+      </div>
+    </div>
+  </div>
+  <hr class="lg-divider">
+  <div class="lg-section">
+    <div class="lg-title" style="color:var(--magenta-dim)">底图 BASE NETWORK</div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="rgba(233,30,140,0.45)" stroke-width="2"/></svg></div>
+      <div class="lg-label" style="color:rgba(255,255,255,0.35)">
+        全部街段（按CSVI着色）
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Layer control -->
+<div class="layer-ctrl">
+  <div class="lc-title">图层控制 Layers</div>
+  <div class="lc-row act" onclick="toggleLayer('activated')">
+    <div class="lc-check on" id="chk-activated"></div>
+    <span class="lc-label">激活节点</span>
+    <span class="lc-count" id="cnt-activated">—</span>
+  </div>
+  <div class="lc-row bot" onclick="toggleLayer('bottleneck')">
+    <div class="lc-check on" id="chk-bottleneck"></div>
+    <span class="lc-label">瓶颈节点</span>
+    <span class="lc-count" id="cnt-bottleneck">—</span>
+  </div>
+  <div class="lc-row cri" onclick="toggleLayer('critical')">
+    <div class="lc-check on" id="chk-critical"></div>
+    <span class="lc-label">临界节点</span>
+    <span class="lc-count" id="cnt-critical">—</span>
+  </div>
+  <div class="lc-row" onclick="toggleLayer('network')" style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px">
+    <div class="lc-check on" id="chk-network"></div>
+    <span class="lc-label" style="color:rgba(255,255,255,0.35)">底图路网</span>
+  </div>
+  <div class="lc-row" onclick="toggleLayer('boundary')" style="margin-top:6px">
+    <div class="lc-check on" id="chk-boundary"></div>
+    <span class="lc-label" style="color:rgba(255,255,255,0.35)">大徐家汇边界 · OSM</span>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-panel">
+  <div class="st-title">节点统计 Node Census</div>
+  <div class="st-grid">
+    <div class="st-cell">
+      <div class="st-label">Activated</div>
+      <div class="st-val c-a" id="st-act">—</div>
+    </div>
+    <div class="st-cell">
+      <div class="st-label">Bottleneck</div>
+      <div class="st-val c-b" id="st-bot">—</div>
+    </div>
+    <div class="st-cell">
+      <div class="st-label">Critical</div>
+      <div class="st-val c-c" id="st-cri">—</div>
+    </div>
+    <div class="st-cell">
+      <div class="st-label">Edges on map</div>
+      <div class="st-val" style="color:rgba(255,255,255,0.4)" id="st-total">—</div>
+    </div>
+  </div>
+  <div id="st-filter-note" style="margin-top:10px;font-size:9px;line-height:1.45;color:rgba(255,255,255,0.28)"></div>
+</div>
+
+<!-- Formula -->
+<div class="formula-panel">
+  <div class="fp-title">分类逻辑 Classification</div>
+  <div class="fp-row"><em class="c-a">W_elder</em> = E × (AC_phys+1)</div>
+  <div class="fp-row"><em class="c-a">W_work</em> = N_YP × Q（Q 同列 <strong>N08</strong>，与停留意愿矩阵一致）</div>
+  <div class="fp-row" style="margin-top:6px"><em class="c-b">瓶颈</em>：AC_phys ≤ 全域中位（较低半）</div>
+  <div class="fp-row">且位于「两簇激活」路网 BFS 交界（种子 = 激活顶点 k-means k=2，退化则经度对半）</div>
+  <div class="fp-row" style="margin-top:6px"><em class="c-c">临界</em>：CSVI中等</div>
+  <div class="fp-row">S_contact/S &gt; 0.6（放宽 10%）∧ W_work高</div>
+  <div class="fp-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:10px;color:rgba(255,255,255,0.25)">
+    W 两轴：先算研究区内<strong>经验分位</strong> P∈[0,1]，再对 P 做 Jenks 三档（「高档」= 该轴相对靠前，两轴可比）
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  MAP INIT
+// ============================================================
+const map = L.map('map', {
+  center: [31.195, 121.438],
+  zoom: 15,
+  zoomControl: false,
+  attributionControl: false,
+  /* 大量路网折线时用 Canvas，避免 3 万+ SVG path 拖垮主线程 */
+  preferCanvas: true
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+  subdomains: 'abcd',
+  updateWhenZooming: false,
+  updateWhenIdle: true
+}).addTo(map);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// ============================================================
+//  JENKS NATURAL BREAKS (Fisher-Jenks, k classes)
+// ============================================================
+function jenks(data, nClasses) {
+  const sorted = [...data].sort((a,b) => a - b);
+  const n = sorted.length;
+  if (n <= nClasses) return sorted;
+
+  // Matrices
+  const lc = Array.from({length: n+1}, () => new Float64Array(nClasses+1).fill(Infinity));
+  const variance = Array.from({length: n+1}, () => new Float64Array(nClasses+1).fill(Infinity));
+
+  for (let i = 1; i <= nClasses; i++) { lc[1][i] = 1; variance[1][i] = 0; }
+
+  for (let l = 2; l <= n; l++) {
+    let sum = 0, sumSq = 0;
+    for (let m = 1; m <= l; m++) {
+      const val = sorted[l - m];
+      sum += val;
+      sumSq += val * val;
+      const w = m;
+      const v = sumSq - (sum * sum) / w;
+      const i4 = l - m;
+      if (i4 !== 0) {
+        for (let j = 2; j <= nClasses; j++) {
+          if (variance[l][j] >= v + variance[i4][j - 1]) {
+            lc[l][j] = i4 + 1;
+            variance[l][j] = v + variance[i4][j - 1];
+          }
+        }
+      }
+    }
+    lc[l][1] = 1;
+    variance[l][1] = sumSq - (sum * sum) / l;
+  }
+
+  // Read back
+  const breaks = [];
+  let k = n;
+  for (let j = nClasses; j >= 2; j--) {
+    const idx = lc[k][j] - 2;
+    breaks.unshift(sorted[idx]);
+    k = lc[k][j] - 1;
+  }
+  return breaks;
+}
+
+// Classify: returns 0,1,2 for 3 classes (low, medium, high)
+function classifyJenks(value, breaks) {
+  if (value < breaks[0]) return 0;
+  if (value < breaks[1]) return 1;
+  return 2;
+}
+
+/** 大数据集下 Fisher–Jenks 为 O(n²) 量级，3 万条会长时间卡死；改用三分位断点，O(n log n) */
+const JENKS_MAX_N = 4096;
+function getClassificationBreaks(values, nClasses) {
+  const n = values.length;
+  if (n === 0) return [0, 1];
+  if (n <= JENKS_MAX_N) return jenks(values, nClasses);
+  const sorted = [...values].sort((a, b) => a - b);
+  const i1 = Math.floor(n / 3);
+  const i2 = Math.floor((2 * n) / 3);
+  let b0 = sorted[Math.min(i1, n - 1)];
+  let b1 = sorted[Math.min(Math.max(i2, i1 + 1), n - 1)];
+  if (b1 <= b0 && n > 2) b1 = sorted[n - 1] + 1e-12;
+  return [b0, b1];
+}
+
+/**
+ * 研究区内经验分位 P∈[0,1]（平均秩处理并列）。
+ * 对 W_elder、W_work 各自独立排名，使后续 Jenks「高档」= 本轴上相对靠前，两轴可比。
+ */
+function addEmpiricalPercentileRanks(edges) {
+  const n = edges.length;
+  if (!n) return;
+  function ranksFor(getter, setter) {
+    if (n === 1) {
+      edges[0][setter] = 0.5;
+      return;
+    }
+    const idx = edges.map((_, i) => i);
+    idx.sort((ia, ib) => {
+      const va = getter(edges[ia]);
+      const vb = getter(edges[ib]);
+      const a = Number.isFinite(va) ? va : 0;
+      const b = Number.isFinite(vb) ? vb : 0;
+      return a - b;
+    });
+    const pr = new Array(n);
+    let j = 0;
+    while (j < n) {
+      let k = j;
+      const vj = getter(edges[idx[j]]);
+      const base = Number.isFinite(vj) ? vj : 0;
+      while (k + 1 < n) {
+        const vk = getter(edges[idx[k + 1]]);
+        const vb = Number.isFinite(vk) ? vk : 0;
+        if (vb !== base) break;
+        k++;
+      }
+      const mid = (j + k) / 2;
+      const p = mid / (n - 1);
+      for (let t = j; t <= k; t++) pr[idx[t]] = p;
+      j = k + 1;
+    }
+    for (let i = 0; i < n; i++) edges[i][setter] = pr[i];
+  }
+  ranksFor(e => e.W_elder, 'p_elder');
+  ranksFor(e => e.W_work, 'p_work');
+}
+
+// ============================================================
+//  DATA: 优先加载同目录 cld_priority.csv（需通过本地 HTTP 打开页面）
+// ============================================================
+function gaussRand(mean, std) {
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return mean + std * Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+}
+
+const CSV_FILENAME = 'cld_priority.csv';
+
+/** 表中 lon/lat 为边段中点；用 Gauss–Seidel 近似恢复端点坐标以绘制线段 */
+function estimateNodePositions(rawEdges) {
+  const nodes = new Set();
+  rawEdges.forEach(r => { nodes.add(r.u); nodes.add(r.v); });
+  const sum = {}, cnt = {};
+  nodes.forEach(n => { sum[n] = [0, 0]; cnt[n] = 0; });
+  rawEdges.forEach(r => {
+    const mx = r.lon, my = r.lat;
+    [r.u, r.v].forEach(id => {
+      sum[id][0] += mx; sum[id][1] += my; cnt[id]++;
+    });
+  });
+  const pos = {};
+  nodes.forEach(n => {
+    pos[n] = { lon: sum[n][0] / cnt[n], lat: sum[n][1] / cnt[n] };
+  });
+  const iters = rawEdges.length > 12000 ? 14 : 32;
+  for (let iter = 0; iter < iters; iter++) {
+    rawEdges.forEach(r => {
+      const mx = r.lon, my = r.lat;
+      pos[r.u].lon = 2 * mx - pos[r.v].lon;
+      pos[r.u].lat = 2 * my - pos[r.v].lat;
+    });
+  }
+  return pos;
+}
+
+function buildEdgesFromCsvRows(rows) {
+  const raw = rows.map(r => ({
+    u: String(r.u),
+    v: String(r.v),
+    lon: +r.lon,
+    lat: +r.lat,
+    csvi_E: +r.csvi_E,
+    csvi_S_env: +r.csvi_S_env,
+    csvi_S_contact: +r.csvi_S_contact,
+    csvi_AC_phys: +r.csvi_AC_phys,
+    csvi_AC_social: +r.csvi_AC_social,
+    N_YP: +r.N_YP,
+    N08: +r.N08,
+    priority: +r.priority
+  }));
+  const pos = estimateNodePositions(raw);
+  return raw.map(r => {
+    const from = pos[r.u], to = pos[r.v];
+    const midLon = (from.lon + to.lon) / 2;
+    const midLat = (from.lat + to.lat) / 2;
+    const sTotal = r.csvi_S_env + r.csvi_S_contact;
+    return {
+      u: r.u, v: r.v,
+      from, to, midLon, midLat,
+      csvi_E: r.csvi_E,
+      csvi_S_env: r.csvi_S_env,
+      csvi_S_contact: r.csvi_S_contact,
+      csvi_AC_phys: r.csvi_AC_phys,
+      csvi_AC_social: r.csvi_AC_social,
+      N_YP: r.N_YP,
+      N08: r.N08,
+      priority: r.priority,
+      W_elder: r.csvi_E * (r.csvi_AC_phys + 1),
+      W_work: Math.max(0, (+r.N_YP || 0) * (+r.N08 || 0)),
+      S_contact_ratio: sTotal > 0 ? r.csvi_S_contact / sTotal : 0
+    };
+  });
+}
+
+function simulateEdges() {
+  const centerLon = 121.438, centerLat = 31.195, spread = 0.018;
+  const gridSize = 28;
+  const nodes = {};
+  let nid = 0;
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      nodes[nid] = {
+        lon: centerLon - spread + (i/gridSize)*spread*2 + gaussRand(0,0.0003),
+        lat: centerLat - spread + (j/gridSize)*spread*2 + gaussRand(0,0.00025),
+        id: nid
+      };
+      nid++;
+    }
+  }
+
+  const edges = [];
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      const id = i*gridSize + j;
+      if (j < gridSize-1 && Math.random()>0.06) {
+        edges.push({u: id, v: i*gridSize+j+1});
+      }
+      if (i < gridSize-1 && Math.random()>0.06) {
+        edges.push({u: id, v: (i+1)*gridSize+j});
+      }
+    }
+  }
+
+  edges.forEach(e => {
+    const n1 = nodes[e.u], n2 = nodes[e.v];
+    e.midLon = (n1.lon + n2.lon)/2;
+    e.midLat = (n1.lat + n2.lat)/2;
+    e.from = n1; e.to = n2;
+
+    const dx = e.midLon - centerLon, dy = e.midLat - centerLat;
+    const distC = Math.sqrt(dx*dx + dy*dy) / spread;
+
+    const dSW = Math.sqrt(Math.pow(e.midLon-(centerLon-0.008),2) + Math.pow(e.midLat-(centerLat-0.006),2));
+    const proxSW = Math.max(0, 1 - dSW/0.008);
+
+    const dSE = Math.sqrt(Math.pow(e.midLon-(centerLon+0.007),2) + Math.pow(e.midLat-(centerLat-0.004),2));
+    const proxSE = Math.max(0, 1 - dSE/0.007);
+
+    const proxCenter = Math.max(0, 1 - distC*1.5);
+
+    e.csvi_E = Math.max(0.05, Math.min(0.95, gaussRand(0.35 + proxSW*0.3 + proxCenter*0.2, 0.10)));
+    e.csvi_S_env = Math.max(0, Math.min(0.4, gaussRand(0.08, 0.03)));
+    e.csvi_S_contact = Math.max(0, Math.min(0.8, gaussRand(0.35 + proxSE*0.2, 0.08)));
+    e.N_YP = Math.max(0.1, Math.min(0.9, gaussRand(0.45 + proxSE*0.25 + proxCenter*0.1, 0.08)));
+    e.N08 = Math.max(0, Math.min(1, gaussRand(0.48, 0.14)));
+
+    const dPark1 = Math.sqrt(Math.pow(e.midLon-(centerLon-0.005),2) + Math.pow(e.midLat-(centerLat+0.006),2));
+    const parkProx = Math.max(0, 1 - dPark1/0.006);
+    const corridorDist = Math.abs(e.midLat - (centerLat - 0.005));
+    const inCorridor = corridorDist < 0.003 && e.midLon > centerLon-0.01 && e.midLon < centerLon+0.01;
+    e.csvi_AC_phys = Math.max(0.001, Math.min(0.3,
+      gaussRand(0.04 + parkProx*0.15 - (inCorridor?0.03:0), 0.025)));
+    e.csvi_AC_social = Math.max(0, Math.min(0.4, gaussRand(0.06 + proxCenter*0.15, 0.04)));
+
+    e.priority = Math.max(0, Math.min(1,
+      e.csvi_E * (e.csvi_S_env + e.csvi_S_contact) / Math.max(0.001, e.csvi_AC_phys * e.csvi_AC_social + 0.01)
+    ));
+    e.priority = Math.min(1, e.priority / 30);
+
+    e.W_elder = e.csvi_E * (e.csvi_AC_phys + 1);
+    e.W_work = Math.max(0, e.N_YP * e.N08);
+
+    const sTotal = e.csvi_S_env + e.csvi_S_contact;
+    e.S_contact_ratio = sTotal > 0 ? e.csvi_S_contact / sTotal : 0;
+  });
+  return edges;
+}
+
+async function loadEdges() {
+  try {
+    const rows = await d3.csv(CSV_FILENAME, d3.autoType);
+    if (!rows || !rows.length) throw new Error('CSV 为空');
+    if (rows[0].priority === undefined || rows[0].csvi_E === undefined || rows[0].N08 === undefined)
+      throw new Error('CSV 列不匹配（需要 priority、csvi_*、N08、N_YP 等列；W_work=N_YP×N08 与矩阵对齐）');
+    return buildEdgesFromCsvRows(rows);
+  } catch (err) {
+    const why = (err && err.message) ? err.message : String(err);
+    console.warn('未加载 ' + CSV_FILENAME + '，使用内置模拟数据。原因: ' + why);
+    return simulateEdges();
+  }
+}
+
+let layerGroups = {};
+let layerVisible = { activated: true, bottleneck: true, critical: true, network: true, boundary: true };
+
+function toggleLayer(name) {
+  layerVisible[name] = !layerVisible[name];
+  const chk = document.getElementById(`chk-${name}`);
+  if (layerVisible[name]) {
+    chk.classList.add('on');
+    map.addLayer(layerGroups[name]);
+  } else {
+    chk.classList.remove('on');
+    map.removeLayer(layerGroups[name]);
+  }
+}
+
+function runPipeline(edges) {
+// ============================================================
+//  JENKS CLASSIFICATION
+// ============================================================
+addEmpiricalPercentileRanks(edges);
+
+const priorityValues = edges.map(e => e.priority);
+const pElderValues = edges.map(e => e.p_elder);
+const pWorkValues = edges.map(e => e.p_work);
+
+const csviBreaks = getClassificationBreaks(priorityValues, 3);
+const wElderBreaks = getClassificationBreaks(pElderValues, 3);
+const wWorkBreaks = getClassificationBreaks(pWorkValues, 3);
+
+// AC_phys 下中位：较低约 50% = csvi_AC_phys ≤ 此值
+const acPhysSorted = edges.map(e => e.csvi_AC_phys).sort((a,b)=>a-b);
+const nAc = acPhysSorted.length;
+const acPhys50 = nAc ? acPhysSorted[Math.floor((nAc - 1) / 2)] : 0;
+
+edges.forEach(e => {
+  e.csviClass = classifyJenks(e.priority, csviBreaks);     // 0=low,1=mid,2=high
+  e.wElderClass = classifyJenks(e.p_elder, wElderBreaks);
+  e.wWorkClass = classifyJenks(e.p_work, wWorkBreaks);
+});
+
+// ============================================================
+//  NODE CLASSIFICATION
+// ============================================================
+const activatedEdges = [];
+const bottleneckEdges = [];
+const criticalEdges = [];
+
+edges.forEach(e => {
+  // --- ACTIVATED: CSVI high AND at least one W high ---
+  if (e.csviClass === 2 && (e.wElderClass === 2 || e.wWorkClass === 2)) {
+    if (e.wElderClass === 2 && e.wWorkClass <= 1) {
+      e.nodeType = 'act_elder'; // 老年人主导型
+    } else if (e.wWorkClass === 2 && e.wElderClass <= 1) {
+      e.nodeType = 'act_work'; // 工作人口主导型
+    } else {
+      e.nodeType = 'act_both'; // 双向停留型
+    }
+    activatedEdges.push(e);
+    return;
+  }
+
+  // --- CRITICAL: CSVI medium, S_contact dominant, W_work high, W_elder low ---
+  if (e.csviClass === 1 && e.S_contact_ratio > 0.6 && e.wWorkClass === 2 && e.wElderClass <= 1) {
+    e.nodeType = 'critical';
+    criticalEdges.push(e);
+    return;
+  }
+
+  e.nodeType = null;
+});
+
+// --- BOTTLENECK: AC_phys 较低 50% ∧ 位于「两簇激活」路网扩张交界（多源 BFS Voronoi 分界）---
+function edgeMetricLength(ev) {
+  const dx = ev.to.lon - ev.from.lon;
+  const dy = ev.to.lat - ev.from.lat;
+  return Math.hypot(dx, dy) || 1e-12;
+}
+
+function buildAdjacencyForRouting(edgeList) {
+  const adj = new Map();
+  for (const ev of edgeList) {
+    const w = edgeMetricLength(ev);
+    for (const [a, b] of [[ev.u, ev.v], [ev.v, ev.u]]) {
+      if (!adj.has(a)) adj.set(a, []);
+      adj.get(a).push({ nb: b, edge: ev, w });
+    }
+  }
+  return adj;
+}
+
+/** 激活边涉及的顶点 → 端点坐标（用于两簇种子） */
+function vertPosFromActivatedEdges(activatedEdgeList) {
+  const m = new Map();
+  for (let i = 0; i < activatedEdgeList.length; i++) {
+    const ev = activatedEdgeList[i];
+    m.set(ev.u, ev.from);
+    m.set(ev.v, ev.to);
+  }
+  return m;
+}
+
+/** 经纬度 → 局部分米近似平面坐标（纬度作 cos 缩放），便于空间聚类 */
+function vertToPlanarXY(lon, lat) {
+  const kLon = Math.cos(lat * Math.PI / 180);
+  return [lon * kLon, lat];
+}
+
+function dist2xy(ax, ay, bx, by) {
+  const dx = ax - bx;
+  const dy = ay - by;
+  return dx * dx + dy * dy;
+}
+
+/**
+ * 对激活顶点做 k-means(k=2)，返回与 verts 顺序一致的标签 0/1；失败时返回 null。
+ */
+function kMeans2LabelsFromVerts(verts, vertPos) {
+  const n = verts.length;
+  if (n < 2) return null;
+  const xy = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const p = vertPos.get(verts[i]);
+    const lon = p && Number.isFinite(p.lon) ? p.lon : 0;
+    const lat = p && Number.isFinite(p.lat) ? p.lat : 0;
+    xy[i] = vertToPlanarXY(lon, lat);
+  }
+  let bestI = 0,
+    bestJ = 1,
+    bestD = -1;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const d = dist2xy(xy[i][0], xy[i][1], xy[j][0], xy[j][1]);
+      if (d > bestD) {
+        bestD = d;
+        bestI = i;
+        bestJ = j;
+      }
+    }
+  }
+  if (bestD < 1e-20) return null;
+  let c0x = xy[bestI][0],
+    c0y = xy[bestI][1];
+  let c1x = xy[bestJ][0],
+    c1y = xy[bestJ][1];
+  const labels = new Uint8Array(n);
+  for (let iter = 0; iter < 40; iter++) {
+    for (let i = 0; i < n; i++) {
+      const d0 = dist2xy(xy[i][0], xy[i][1], c0x, c0y);
+      const d1 = dist2xy(xy[i][0], xy[i][1], c1x, c1y);
+      labels[i] = d0 <= d1 ? 0 : 1;
+    }
+    let s0x = 0,
+      s0y = 0,
+      n0 = 0;
+    let s1x = 0,
+      s1y = 0,
+      n1 = 0;
+    for (let i = 0; i < n; i++) {
+      if (labels[i] === 0) {
+        s0x += xy[i][0];
+        s0y += xy[i][1];
+        n0++;
+      } else {
+        s1x += xy[i][0];
+        s1y += xy[i][1];
+        n1++;
+      }
+    }
+    if (n0 === 0 || n1 === 0) return null;
+    const nc0x = s0x / n0,
+      nc0y = s0y / n0;
+    const nc1x = s1x / n1,
+      nc1y = s1y / n1;
+    if (
+      Math.abs(nc0x - c0x) < 1e-9 &&
+      Math.abs(nc0y - c0y) < 1e-9 &&
+      Math.abs(nc1x - c1x) < 1e-9 &&
+      Math.abs(nc1y - c1y) < 1e-9
+    )
+      break;
+    c0x = nc0x;
+    c0y = nc0y;
+    c1x = nc1x;
+    c1y = nc1y;
+  }
+  return labels;
+}
+
+/** 经度排序后对半切分（k-means 退化时的回退） */
+function seedLabelsLongitudeFallback(verts, vertPos) {
+  const sorted = [...verts];
+  sorted.sort((a, b) => {
+    const pa = vertPos.get(a),
+      pb = vertPos.get(b);
+    return (pa ? pa.lon : 0) - (pb ? pb.lon : 0);
+  });
+  const half = Math.floor(sorted.length / 2);
+  const seedLabel = new Map();
+  if (half < 1 || half >= sorted.length) return seedLabel;
+  for (let i = 0; i < half; i++) seedLabel.set(sorted[i], 0);
+  for (let i = half; i < sorted.length; i++) seedLabel.set(sorted[i], 1);
+  return seedLabel;
+}
+
+/**
+ * 激活顶点先做平面 k-means(k=2) 得两簇种子（贴合空间团簇）；失败则回退经度对半切。
+ * 随后在路网上无权多源 BFS 扩张，取两端簇号不同的边为 Voronoi 式衔接带，再 ∩ 低 AC_phys 得瓶颈。
+ */
+function collectActivationVoronoiSeamEdges(allEdges, activatedEdgeList, vertPos) {
+  const seam = new Set();
+  if (!activatedEdgeList.length || !allEdges.length) return seam;
+
+  const vertSet = new Set();
+  for (let i = 0; i < activatedEdgeList.length; i++) {
+    const ae = activatedEdgeList[i];
+    vertSet.add(ae.u);
+    vertSet.add(ae.v);
+  }
+  const verts = [...vertSet];
+  if (verts.length < 2) return seam;
+
+  let seedLabel = new Map();
+  const km = kMeans2LabelsFromVerts(verts, vertPos);
+  if (km) {
+    for (let i = 0; i < verts.length; i++) seedLabel.set(verts[i], km[i]);
+  } else {
+    seedLabel = seedLabelsLongitudeFallback(verts, vertPos);
+  }
+  if (seedLabel.size < 2) return seam;
+
+  const adj = buildAdjacencyForRouting(allEdges);
+  const owner = new Map(seedLabel);
+  const q = [...seedLabel.keys()];
+  let qi = 0;
+  while (qi < q.length) {
+    const u = q[qi++];
+    const lu = owner.get(u);
+    const outs = adj.get(u);
+    if (!outs) continue;
+    for (let i = 0; i < outs.length; i++) {
+      const nb = outs[i].nb;
+      if (!owner.has(nb)) {
+        owner.set(nb, lu);
+        q.push(nb);
+      }
+    }
+  }
+
+  for (let i = 0; i < allEdges.length; i++) {
+    const ev = allEdges[i];
+    const a = owner.get(ev.u);
+    const b = owner.get(ev.v);
+    if (a !== undefined && b !== undefined && a !== b) seam.add(ev);
+  }
+  return seam;
+}
+
+const vertPosAct = vertPosFromActivatedEdges(activatedEdges);
+const connectorSeamSet = collectActivationVoronoiSeamEdges(edges, activatedEdges, vertPosAct);
+
+edges.forEach(e => {
+  if (e.nodeType) return;
+  if (e.csvi_AC_phys > acPhys50) return;
+  if (!connectorSeamSet.has(e)) return;
+  e.nodeType = 'bottleneck';
+  bottleneckEdges.push(e);
+});
+
+// ============================================================
+//  RENDER
+// ============================================================
+// CSVI color for base network（玫红单色系：低值偏暗 → 高值偏亮）
+function csviColorFromT(t) {
+  t = Math.max(0, Math.min(1, t));
+  const r = Math.round(88 + t * 147);
+  const g = Math.round(18 + t * 48);
+  const b = Math.round(52 + t * 108);
+  return `rgba(${r},${g},${b},${0.15 + t * 0.28})`;
+}
+
+/** 3.2 万条边若各建一个 L.polyline，Leaflet 事件与图层管理开销极大；按 priority 分桶合并为少量 Multi-Polyline */
+const NETWORK_BUCKETS = 22;
+/** 地图上仅绘制 priority 最高的这一比例边段（性能） */
+const MAP_DISPLAY_TOP_FRAC = 0.01;
+function minPriorityForTopFraction(allEdges, frac) {
+  const n = allEdges.length;
+  if (!n) return Infinity;
+  const arr = new Float64Array(n);
+  for (let i = 0; i < n; i++) arr[i] = allEdges[i].priority;
+  arr.sort();
+  const take = Math.max(1, Math.ceil(n * frac));
+  return arr[n - take];
+}
+
+function priorityTo01(edgeList) {
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < edgeList.length; i++) {
+    const p = edgeList[i].priority;
+    if (p < lo) lo = p;
+    if (p > hi) hi = p;
+  }
+  const span = hi - lo || 1;
+  return (p) => (p - lo) / span;
+}
+
+const mapPrioMin = minPriorityForTopFraction(edges, MAP_DISPLAY_TOP_FRAC);
+function isMapVisible(e) {
+  return e.priority >= mapPrioMin;
+}
+
+// Layer groups（路网与其它矢量共用 Canvas renderer，减轻 SVG 节点数）
+const vectorRenderer = L.canvas({ padding: 0.5 });
+layerGroups = {
+  network: L.layerGroup().addTo(map),
+  activated: L.layerGroup().addTo(map),
+  bottleneck: L.layerGroup().addTo(map),
+  critical: L.layerGroup().addTo(map),
+  boundary: L.layerGroup().addTo(map),
+};
+addXujiahuiBoundaryToGroup(layerGroups.boundary);
+
+const visibleForColor = [];
+for (let i = 0; i < edges.length; i++) {
+  if (isMapVisible(edges[i])) visibleForColor.push(edges[i]);
+}
+const p01 = priorityTo01(visibleForColor.length ? visibleForColor : edges);
+const bucketSegs = Array.from({ length: NETWORK_BUCKETS }, () => []);
+for (let i = 0; i < edges.length; i++) {
+  const e = edges[i];
+  if (!isMapVisible(e)) continue;
+  const t = Math.max(0, Math.min(1, p01(e.priority)));
+  const bi = Math.min(NETWORK_BUCKETS - 1, Math.floor(t * NETWORK_BUCKETS));
+  bucketSegs[bi].push([[e.from.lat, e.from.lon], [e.to.lat, e.to.lon]]);
+}
+for (let bi = 0; bi < NETWORK_BUCKETS; bi++) {
+  const segs = bucketSegs[bi];
+  if (!segs.length) continue;
+  const t = (bi + 0.5) / NETWORK_BUCKETS;
+  L.polyline(segs, {
+    renderer: vectorRenderer,
+    interactive: false,
+    smoothFactor: 0,
+    color: csviColorFromT(t),
+    weight: 1.5,
+    opacity: 0.5,
+    lineCap: 'round'
+  }).addTo(layerGroups.network);
+}
+
+// --- SVG 图标（无 SVG 滤镜，单例复用，避免每个标记单独解析 blur）---
+function starIcon(color, size=24) {
+  const c = size/2;
+  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="${c},1 ${c*1.22},${c*0.65} ${size-1},${c*0.65} ${c*1.35},${c*1.05} ${c*1.5},${size-1} ${c},${c*1.3} ${c*0.5},${size-1} ${c*0.65},${c*1.05} 1,${c*0.65} ${c*0.78},${c*0.65}"
+      fill="${color}" fill-opacity="0.65" stroke="${color}" stroke-width="1.5" />
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [size, size], iconAnchor: [c, c]
+  });
+}
+
+function squareIcon(color, size=18) {
+  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="${size-4}" height="${size-4}" rx="2"
+      fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="2" />
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [size, size], iconAnchor: [size/2, size/2]
+  });
+}
+
+/** 正三角 ▲（顶点朝上） */
+function triangleUpIcon(color, size=22) {
+  const c = size/2;
+  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="${c},2 ${size-2},${size-2} 2,${size-2}"
+      fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="2" />
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [size, size], iconAnchor: [c, c]
+  });
+}
+/** 倒三角 ▼（顶点朝下） */
+function triangleDownIcon(color, size=22) {
+  const c = size/2;
+  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="${c},${size-2} ${size-2},2 2,2"
+      fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="2" />
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [size, size], iconAnchor: [c, c]
+  });
+}
+/** 圆形（象限临界点） */
+function circleNodeIcon(color, size=20) {
+  const c = size / 2;
+  const r = c - 2;
+  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${c}" cy="${c}" r="${r}"
+      fill="${color}" fill-opacity="0.28" stroke="${color}" stroke-width="2" />
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [size, size], iconAnchor: [c, c]
+  });
+}
+
+const MAG_NODE = '#e91e8c';
+const NODE_ICONS = {
+  act_elder:  triangleUpIcon(MAG_NODE, 20),
+  act_work:   triangleDownIcon(MAG_NODE, 20),
+  act_both:   starIcon(MAG_NODE, 26),
+  bottleneck: squareIcon(MAG_NODE, 16),
+  critical:   circleNodeIcon(MAG_NODE, 20),
+};
+
+const nodeStyles = {
+  act_elder:  { typeCN: '激活·老年人主导型', typeEN: 'Activated A₁', typeClass: 't-act',
+                note: 'W_elder高 W_work低 → 认知恢复线主导' },
+  act_work:   { typeCN: '激活·工作人口主导型', typeEN: 'Activated A₂', typeClass: 't-act',
+                note: 'W_work高 W_elder低 → 人机共生线主导' },
+  act_both:   { typeCN: '激活·双向停留型', typeEN: 'Activated A₃', typeClass: 't-act',
+                note: '两者都高 → 稀缺，双线共同作用' },
+  bottleneck: { typeCN: '瓶颈', typeEN: 'Bottleneck', typeClass: 't-bot',
+                note: 'AC_phys ≤ 全域中位；激活顶点空间 k=2 聚类 + BFS 衔接带' },
+  critical:   { typeCN: '临界', typeEN: 'Critical', typeClass: 't-cri',
+                note: 'CSVI中等，S_contact主导，单干预撬动' },
+};
+
+function makeTooltip(e) {
+  const s = nodeStyles[e.nodeType];
+  return `
+    <div class="tt-type ${s.typeClass}">${s.typeEN}</div>
+    <div class="tt-name">${s.typeCN}</div>
+    <div class="tt-r"><span>CSVI (priority)</span><b>${e.priority.toFixed(4)}</b></div>
+    <div class="tt-r"><span>W_elder (E×(AC_phys+1))</span><b>${e.W_elder.toFixed(4)}</b></div>
+    <div class="tt-r"><span>W_work (N_YP×Q)</span><b>${e.W_work.toFixed(4)}</b></div>
+    <div class="tt-r"><span>P_work（分位）</span><b>${(e.p_work != null ? e.p_work : 0).toFixed(3)}</b></div>
+    <div class="tt-r"><span>P_elder（分位）</span><b>${(e.p_elder != null ? e.p_elder : 0).toFixed(3)}</b></div>
+    <div class="tt-r"><span>Q（N08）</span><b>${(e.N08 != null && Number.isFinite(e.N08) ? e.N08 : 0).toFixed(4)}</b></div>
+    <hr class="tt-sep">
+    <div class="tt-r"><span>csvi_E</span><b>${e.csvi_E.toFixed(3)}</b></div>
+    <div class="tt-r"><span>csvi_AC_phys</span><b>${e.csvi_AC_phys.toFixed(4)}</b></div>
+    <div class="tt-r"><span>csvi_S_contact</span><b>${e.csvi_S_contact.toFixed(3)}</b></div>
+    <div class="tt-r"><span>S_contact / S_total</span><b>${(e.S_contact_ratio*100).toFixed(1)}%</b></div>
+    <div class="tt-r"><span>N_YP</span><b>${e.N_YP.toFixed(3)}</b></div>
+    <hr class="tt-sep">
+    <div class="tt-note">${s.note}</div>
+  `;
+}
+
+// Place classified nodes（激活 / 临界 / 瓶颈：全部绘制）
+function placeNodeMarker(e, layerName) {
+  const s = nodeStyles[e.nodeType];
+  const marker = L.marker([e.midLat, e.midLon], { icon: NODE_ICONS[e.nodeType] })
+    .bindTooltip(makeTooltip(e), {
+      className: 'node-tooltip',
+      direction: 'top',
+      offset: [0, -14],
+      sticky: false
+    });
+  marker.addTo(layerGroups[layerName]);
+}
+
+const activatedDrawList = activatedEdges;
+const bottleneckDrawList = bottleneckEdges;
+const criticalDrawList = criticalEdges;
+
+activatedDrawList.forEach(e => placeNodeMarker(e, 'activated'));
+bottleneckDrawList.forEach(e => placeNodeMarker(e, 'bottleneck'));
+criticalDrawList.forEach(e => placeNodeMarker(e, 'critical'));
+
+// ============================================================
+//  STATS UPDATE
+// ============================================================
+const actElderN = activatedDrawList.filter(e => e.nodeType === 'act_elder').length;
+const actWorkN = activatedDrawList.filter(e => e.nodeType === 'act_work').length;
+const actBothN = activatedDrawList.filter(e => e.nodeType === 'act_both').length;
+const nDrawn = visibleForColor.length;
+const nAct = activatedEdges.length;
+const nBot = bottleneckEdges.length;
+const nCri = criticalEdges.length;
+
+document.getElementById('st-act').textContent = nAct ? String(nAct) : '0';
+document.getElementById('st-bot').textContent = nBot ? String(nBot) : '0';
+document.getElementById('st-cri').textContent = nCri ? String(nCri) : '0';
+document.getElementById('st-total').textContent = `${nDrawn} / ${edges.length}`;
+
+document.getElementById('cnt-activated').textContent =
+  nAct ? `${nAct}（A₁ ${actElderN} · A₂ ${actWorkN} · A₃ ${actBothN}）` : '0';
+document.getElementById('cnt-bottleneck').textContent =
+  nBot ? `${nBot} 全部` : '0';
+document.getElementById('cnt-critical').textContent = nCri ? `${nCri} 全部` : '0';
+
+const noteEl = document.getElementById('st-filter-note');
+if (noteEl) {
+  noteEl.textContent =
+    `底图路网：priority 前 ${MAP_DISPLAY_TOP_FRAC * 100}%（≥ ${mapPrioMin.toFixed(4)}），共 ${nDrawn} 条。` +
+    `节点：激活 ${nAct}、临界 ${nCri}、瓶颈 ${nBot} 均为分类全量绘制。` +
+    ` W_elder / W_work 先转研究区内经验分位再 Jenks 分档（两轴「高档」可比）。` +
+    ` 全表 ${edges.length} 条边参与分类。`;
+}
+
+  const extentMarker = [...activatedDrawList, ...bottleneckDrawList, ...criticalDrawList];
+  const extentSrc = extentMarker.length ? extentMarker : (visibleForColor.length ? visibleForColor : edges);
+  const latExtent = d3.extent(extentSrc, e => e.midLat);
+  const lonExtent = d3.extent(extentSrc, e => e.midLon);
+  const pad = 0.003;
+  if (latExtent[0] != null && lonExtent[0] != null) {
+    const b = [[latExtent[0] - pad, lonExtent[0] - pad], [latExtent[1] + pad, lonExtent[1] + pad]];
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { map.fitBounds(b, { animate: false }); });
+    });
+  }
+}
+
+loadEdges().then(runPipeline);
+</script>
+</body>
+</html>

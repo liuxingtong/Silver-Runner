@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>场域系统选址 · Field System Site Selection</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="xujiahui-osm-boundary.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --magenta: #e91e8c;
+    --magenta-bright: #ff4dad;
+    --magenta-soft: rgba(233, 30, 140, 0.75);
+    --magenta-dim: rgba(233, 30, 140, 0.45);
+    --magenta-bg: rgba(233, 30, 140, 0.12);
+    --magenta-2: #ff6b9d;
+    --magenta-3: #c2186d;
+    --field-a: #ff4dad;
+    --field-b: #ff6b9d;
+    --field-c: #e91e8c;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans','Noto Sans SC',sans-serif}
+  #map{width:100%;height:100%;z-index:1}
+  .leaflet-control-attribution{display:none!important}
+  .leaflet-control-zoom a{
+    background:rgba(12,12,14,0.94)!important;
+    color:var(--magenta-bright)!important;
+    border-color:rgba(233,30,140,0.35)!important;
+  }
+  .leaflet-control-zoom a:hover{background:rgba(233,30,140,0.15)!important;}
+
+  .panel-header{
+    position:fixed;top:0;left:0;right:0;
+    padding:20px 28px 18px;
+    background:linear-gradient(180deg,rgba(8,8,10,0.94) 0%,rgba(8,8,10,0.7) 65%,transparent 100%);
+    z-index:1000;pointer-events:none;
+  }
+  .panel-header .tag{
+    font-size:10px;letter-spacing:3px;text-transform:uppercase;
+    color:var(--magenta-dim);font-weight:500;margin-bottom:4px;
+  }
+  .panel-header h1{font-size:22px;font-weight:700;color:#f0f0f0;letter-spacing:-0.3px}
+  .panel-header .sub{
+    font-size:12px;color:rgba(255,255,255,0.4);font-weight:300;
+    font-style:italic;margin-top:3px;
+  }
+
+  /* Legend */
+  .legend-panel{
+    position:fixed;top:100px;left:28px;
+    background:rgba(12,12,14,0.94);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    padding:18px 20px;
+    z-index:1000;
+    backdrop-filter:blur(14px);
+    width:300px;
+    max-height:calc(100vh - 140px);
+    overflow-y:auto;
+  }
+  .legend-panel::-webkit-scrollbar{width:3px}
+  .legend-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+  .lg-section{margin-bottom:14px}
+  .lg-section:last-child{margin-bottom:0}
+  .lg-title{
+    font-size:10px;letter-spacing:2px;text-transform:uppercase;
+    margin-bottom:8px;font-weight:500;color:var(--magenta-soft);
+  }
+  .lg-item{
+    display:flex;align-items:flex-start;gap:10px;
+    margin-bottom:8px;font-size:11px;line-height:1.45;
+  }
+  .lg-symbol{
+    flex-shrink:0;width:20px;height:20px;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:1px;
+  }
+  .lg-label{color:rgba(255,255,255,0.75)}
+  .lg-label .lg-sub{
+    display:block;font-size:10px;color:rgba(255,255,255,0.35);
+    margin-top:2px;font-style:italic;
+  }
+  .lg-divider{
+    border:none;border-top:1px solid rgba(255,255,255,0.06);
+    margin:12px 0;
+  }
+
+  /* Stats */
+  .stats-panel{
+    position:fixed;bottom:28px;left:28px;
+    background:rgba(12,12,14,0.94);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    padding:16px 20px;
+    z-index:1000;
+    backdrop-filter:blur(14px);
+    width:300px;
+  }
+  .st-title{
+    font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    color:rgba(255,255,255,0.3);margin-bottom:10px;
+  }
+  .st-row{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:6px;font-size:12px;
+  }
+  .st-row .st-lbl{color:rgba(255,255,255,0.5)}
+  .st-row .st-val{font-weight:600;letter-spacing:-0.3px}
+  .st-row .c-a{color:var(--field-a)}
+  .st-row .c-b{color:var(--field-b)}
+  .st-row .c-c{color:var(--field-c)}
+  .st-row .c-total{color:var(--magenta-bright)}
+  .st-row .c-10ha{color:var(--magenta-2);font-size:11px}
+
+  /* Algorithm panel */
+  .algo-panel{
+    position:fixed;top:100px;right:28px;
+    background:rgba(12,12,14,0.94);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    padding:16px 20px;
+    z-index:1000;
+    backdrop-filter:blur(14px);
+    width:260px;
+  }
+  .algo-panel .ap-title{
+    font-size:9px;letter-spacing:2px;text-transform:uppercase;
+    color:rgba(255,255,255,0.3);margin-bottom:10px;
+  }
+  .algo-panel .ap-step{
+    font-size:10.5px;color:rgba(255,255,255,0.55);line-height:1.55;
+    margin-bottom:6px;padding-left:14px;position:relative;
+  }
+  .algo-panel .ap-step::before{
+    content:'';position:absolute;left:0;top:6px;
+    width:6px;height:6px;border-radius:50%;
+    background:var(--magenta-bright);
+    opacity:0.55;
+  }
+  .algo-panel .ap-step em{font-style:normal;font-weight:600;color:var(--magenta-bright)}
+
+  /* Tooltip */
+  .node-tooltip{
+    background:rgba(12,12,14,0.96)!important;
+    border:1px solid rgba(255,255,255,0.15)!important;
+    border-radius:8px!important;
+    padding:10px 14px!important;
+    font-family:'DM Sans','Noto Sans SC',sans-serif!important;
+    font-size:11px!important;
+    color:#e0e0e0!important;
+    max-width:260px!important;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5)!important;
+  }
+  .tt-type{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;font-weight:500}
+  .tt-type.t-catalyst{color:var(--magenta-bright)}
+  .tt-type.t-corridor{color:var(--magenta-2)}
+  .tt-type.t-field{color:var(--field-c)}
+  .tt-name{font-size:13px;font-weight:600;color:#f5f5f5;margin-bottom:6px}
+  .tt-r{display:flex;justify-content:space-between;gap:12px;color:rgba(255,255,255,0.5);margin-bottom:2px}
+  .tt-r b{color:var(--magenta-bright);font-weight:600}
+  .tt-sep{border:none;border-top:1px solid rgba(255,255,255,0.08);margin:6px 0}
+  .tt-note{font-size:10px;color:rgba(255,255,255,0.35);font-style:italic}
+
+  .map-loading{
+    position:fixed;inset:0;z-index:800;pointer-events:none;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(8,8,10,0.35);
+    color:var(--magenta-bright);font-size:13px;font-weight:600;
+    letter-spacing:0.5px;text-shadow:0 0 12px rgba(233,30,140,0.5);
+    transition:opacity 0.25s ease;
+  }
+  .map-loading.done{opacity:0;visibility:hidden}
+
+  .leaflet-tooltip.boundary-tt{
+    background:rgba(12,12,14,0.94)!important;
+    border:1px solid rgba(233,30,140,0.4)!important;
+    color:rgba(255,255,255,0.88)!important;
+    font-size:11px!important;
+    padding:6px 10px!important;
+    border-radius:8px!important;
+    box-shadow:0 4px 20px rgba(0,0,0,0.45)!important;
+  }
+</style>
+</head>
+<body>
+
+<div id="map-loading" class="map-loading" aria-live="polite">加载路网与分类中…</div>
+<div id="map"></div>
+
+<div class="panel-header">
+  <div class="tag">Prototype ③ — Field System</div>
+  <h1>场域系统选址 · 触媒 + 廊道 + 边界</h1>
+  <div class="sub">场域总量固定 <strong>10 ha</strong>，按簇 <strong>Σpriority</strong> 比例切块；抽样绘制 + 分帧渲染；触媒圆点无 Tooltip。统计仍为全量。</div>
+</div>
+
+<!-- Legend -->
+<div class="legend-panel">
+  <div class="lg-section">
+    <div class="lg-title">原型一 · 触媒空间 CATALYST</div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="16" height="16"><circle cx="8" cy="8" r="5.5" fill="#ff4dad" fill-opacity="0.55" stroke="#ffb3d9" stroke-width="1.2"/></svg></div>
+      <div class="lg-label">激活节点（Canvas 圆点抽样）<span class="lg-sub">性能模式关闭悬停详情；斜土路/田子坊型仍按分类着色</span></div>
+    </div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="#ff4dad" fill-opacity="0.3" stroke="#ff4dad" stroke-width="1.5"/></svg></div>
+      <div class="lg-label">临界节点 → 低强度触媒<span class="lg-sub">仅激活 W_elder 即可</span></div>
+    </div>
+  </div>
+  <hr class="lg-divider">
+  <div class="lg-section">
+    <div class="lg-title">原型二 · 连接廊道 CORRIDOR</div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="16" height="6"><line x1="0" y1="3" x2="16" y2="3" stroke="#ff6b9d" stroke-width="2.5"/></svg></div>
+      <div class="lg-label">瓶颈路径<span class="lg-sub">优先绘严格瓶颈；视口随场域+线段范围适配。无严格瓶颈时依次用接缝/低AC 兜底</span></div>
+    </div>
+  </div>
+  <hr class="lg-divider">
+  <div class="lg-section">
+    <div class="lg-title">原型三 · 场域系统 FIELD SYSTEM</div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="16" height="16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#e91e8c" stroke-width="1.5" stroke-dasharray="3,2"/></svg></div>
+      <div class="lg-label">聚类凸包边界<span class="lg-sub">三色均为玫红系，仅深浅区分 A/B/C</span></div>
+    </div>
+  </div>
+  <hr class="lg-divider">
+  <div class="lg-section">
+    <div class="lg-title">研究区 · Study area</div>
+    <div class="lg-item">
+      <div class="lg-symbol"><svg width="20" height="12" viewBox="0 0 20 12"><rect x="1" y="2" width="18" height="8" rx="1" fill="none" stroke="#ff4dad" stroke-width="1.4" stroke-dasharray="4 3"/></svg></div>
+      <div class="lg-label">大徐家汇边界 · OSM<span class="lg-sub">与节点地图同源；四街道行政并集</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-panel">
+  <div class="st-title">场域系统统计 Field System Stats</div>
+  <div class="st-row"><span class="st-lbl">场域 A</span><span class="st-val c-a" id="stat-a">—</span></div>
+  <div class="st-row"><span class="st-lbl">场域 B</span><span class="st-val c-b" id="stat-b">—</span></div>
+  <div class="st-row"><span class="st-lbl">场域 C</span><span class="st-val c-c" id="stat-c">—</span></div>
+  <hr class="lg-divider">
+  <div class="st-row"><span class="st-lbl">总面积</span><span class="st-val c-total" id="stat-total">—</span></div>
+  <div class="st-row"><span class="st-lbl">触媒节点</span><span class="st-val" style="color:#f0f0f0" id="stat-catalysts">—</span></div>
+  <div class="st-row"><span class="st-lbl">瓶颈边段</span><span class="st-val" style="color:var(--magenta-2)" id="stat-corridors">—</span></div>
+  <div class="st-row"><span class="st-lbl">10 ha 分配</span><span class="st-val c-10ha" id="stat-10ha">—</span></div>
+</div>
+
+<!-- Algorithm -->
+<div class="algo-panel">
+  <div class="ap-title">选址算法 Algorithm</div>
+  <div class="ap-step"><em>Step 1</em> 复现节点分类（激活/瓶颈/临界）</div>
+  <div class="ap-step"><em>Step 2</em> DBSCAN 密度聚类（ε=180m, minPts=3）</div>
+  <div class="ap-step"><em>Step 3</em> 按簇内 Σpriority 排序取 Top-3</div>
+  <div class="ap-step"><em>Step 4</em> 凸包 + 缓冲区定义场域边界</div>
+  <div class="ap-step"><em>Step 5</em> 纳入簇间瓶颈边 → 连接廊道</div>
+  <div class="ap-step"><em>Step 6</em> 总量固定 <em>10 ha</em>：按各簇 <em>Σpriority</em> 比例分配每块目标面积；先取簇凸包，小于目标则<strong>外扩缓冲</strong>，大于目标则相对质心<strong>缩小</strong>至目标</div>
+</div>
+
+<script>
+// ============================================================
+//  MAP INIT
+// ============================================================
+const map = L.map('map', {
+  center: [31.195, 121.438],
+  zoom: 15,
+  zoomControl: false,
+  attributionControl: false,
+  preferCanvas: true,
+  zoomAnimation: false,
+  fadeAnimation: false
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19,
+  subdomains: 'abcd',
+  updateWhenIdle: true,
+  keepBuffer: 1
+}).addTo(map);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+const boundaryLayerGroup = L.layerGroup().addTo(map);
+function bringStudyBoundaryToFront() {
+  boundaryLayerGroup.eachLayer(function (ly) {
+    if (ly && typeof ly.bringToFront === 'function') ly.bringToFront();
+  });
+}
+addXujiahuiBoundaryToGroup(boundaryLayerGroup, bringStudyBoundaryToFront);
+
+// ============================================================
+//  JENKS（与 map_intervention_nodes 一致；大样本退回三分位）
+// ============================================================
+function jenks(data, nClasses) {
+  const sorted = [...data].sort((a, b) => a - b);
+  const n = sorted.length;
+  if (n <= nClasses) return sorted;
+  const lc = Array.from({ length: n + 1 }, () => new Float64Array(nClasses + 1).fill(Infinity));
+  const variance = Array.from({ length: n + 1 }, () => new Float64Array(nClasses + 1).fill(Infinity));
+  for (let i = 1; i <= nClasses; i++) {
+    lc[1][i] = 1;
+    variance[1][i] = 0;
+  }
+  for (let l = 2; l <= n; l++) {
+    let sum = 0, sumSq = 0;
+    for (let m = 1; m <= l; m++) {
+      const val = sorted[l - m];
+      sum += val;
+      sumSq += val * val;
+      const w = m;
+      const v = sumSq - (sum * sum) / w;
+      const i4 = l - m;
+      if (i4 !== 0) {
+        for (let j = 2; j <= nClasses; j++) {
+          if (variance[l][j] >= v + variance[i4][j - 1]) {
+            lc[l][j] = i4 + 1;
+            variance[l][j] = v + variance[i4][j - 1];
+          }
+        }
+      }
+    }
+    lc[l][1] = 1;
+    variance[l][1] = sumSq - (sum * sum) / l;
+  }
+  const breaks = [];
+  let k = n;
+  for (let j = nClasses; j >= 2; j--) {
+    const idx = lc[k][j] - 2;
+    breaks.unshift(sorted[idx]);
+    k = lc[k][j] - 1;
+  }
+  return breaks;
+}
+const JENKS_MAX_N = 4096;
+function getClassificationBreaks(values, nClasses) {
+  const n = values.length;
+  if (n === 0) return [0, 1];
+  if (n <= JENKS_MAX_N) return jenks(values, nClasses);
+  const sorted = [...values].sort((a, b) => a - b);
+  const i1 = Math.floor(n / 3);
+  const i2 = Math.floor((2 * n) / 3);
+  let b0 = sorted[Math.min(i1, n - 1)];
+  let b1 = sorted[Math.min(Math.max(i2, i1 + 1), n - 1)];
+  if (b1 <= b0 && n > 2) b1 = sorted[n - 1] + 1e-12;
+  return [b0, b1];
+}
+function classifyJenks(value, breaks) {
+  if (value < breaks[0]) return 0;
+  if (value < breaks[1]) return 1;
+  return 2;
+}
+
+/** 与 map_intervention_nodes 一致：W 两轴用研究区内经验分位后再 Jenks */
+function addEmpiricalPercentileRanks(edges) {
+  const n = edges.length;
+  if (!n) return;
+  function ranksFor(getter, setter) {
+    if (n === 1) {
+      edges[0][setter] = 0.5;
+      return;
+    }
+    const idx = edges.map((_, i) => i);
+    idx.sort((ia, ib) => {
+      const va = getter(edges[ia]);
+      const vb = getter(edges[ib]);
+      const a = Number.isFinite(va) ? va : 0;
+      const b = Number.isFinite(vb) ? vb : 0;
+      return a - b;
+    });
+    const pr = new Array(n);
+    let j = 0;
+    while (j < n) {
+      let k = j;
+      const vj = getter(edges[idx[j]]);
+      const base = Number.isFinite(vj) ? vj : 0;
+      while (k + 1 < n) {
+        const vk = getter(edges[idx[k + 1]]);
+        const vb = Number.isFinite(vk) ? vk : 0;
+        if (vb !== base) break;
+        k++;
+      }
+      const mid = (j + k) / 2;
+      const p = mid / (n - 1);
+      for (let t = j; t <= k; t++) pr[idx[t]] = p;
+      j = k + 1;
+    }
+    for (let i = 0; i < n; i++) edges[i][setter] = pr[i];
+  }
+  ranksFor(e => e.W_elder, 'p_elder');
+  ranksFor(e => e.W_work, 'p_work');
+}
+
+// ============================================================
+//  UTILITY
+// ============================================================
+function gaussRand(mean, std) {
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return mean + std * Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+}
+
+function haversineM(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+/** DBSCAN 邻域：局部平面米制坐标（相对质心），避免 O(n²) 次 haversine */
+function attachPlanarMetersXY(points) {
+  const n = points.length;
+  if (n === 0) return;
+  let slat = 0, slon = 0;
+  for (let i = 0; i < n; i++) {
+    slat += points[i].lat;
+    slon += points[i].lon;
+  }
+  const clat = slat / n;
+  const clon = slon / n;
+  const mLat = 111320;
+  const mLon = 111320 * Math.cos(clat * Math.PI / 180);
+  for (let i = 0; i < n; i++) {
+    const p = points[i];
+    p._mx = (p.lon - clon) * mLon;
+    p._my = (p.lat - clat) * mLat;
+  }
+}
+
+// Shoelace area in m² from [lat,lon] ring
+function polygonAreaM2(ring) {
+  if (ring.length < 3) return 0;
+  // project to meters around centroid
+  let cLat=0, cLon=0;
+  ring.forEach(p => { cLat+=p[0]; cLon+=p[1]; });
+  cLat/=ring.length; cLon/=ring.length;
+  const mPerDegLat = 111320;
+  const mPerDegLon = 111320 * Math.cos(cLat*Math.PI/180);
+  const pts = ring.map(p => [(p[1]-cLon)*mPerDegLon, (p[0]-cLat)*mPerDegLat]);
+  let area = 0;
+  for (let i=0, j=pts.length-1; i<pts.length; j=i++) {
+    area += (pts[j][0]+pts[i][0])*(pts[j][1]-pts[i][1]);
+  }
+  return Math.abs(area/2);
+}
+
+// Convex hull (Graham scan)
+function convexHull(points) {
+  if (points.length < 3) return points.slice();
+  const pts = points.slice().sort((a,b) => a[0]-b[0] || a[1]-b[1]);
+  const cross = (O,A,B) => (A[0]-O[0])*(B[1]-O[1])-(A[1]-O[1])*(B[0]-O[0]);
+  const lower = [];
+  for (const p of pts) { while(lower.length>=2 && cross(lower[lower.length-2],lower[lower.length-1],p)<=0) lower.pop(); lower.push(p); }
+  const upper = [];
+  for (let i=pts.length-1;i>=0;i--) { const p=pts[i]; while(upper.length>=2 && cross(upper[upper.length-2],upper[upper.length-1],p)<=0) upper.pop(); upper.push(p); }
+  upper.pop(); lower.pop();
+  return lower.concat(upper);
+}
+
+// Buffer a convex hull outward by `bufferM` meters
+function bufferHull(hull, bufferM) {
+  if (hull.length < 3) return hull;
+  let cLat=0, cLon=0;
+  hull.forEach(p => { cLat+=p[0]; cLon+=p[1]; });
+  cLat/=hull.length; cLon/=hull.length;
+  const mPerDegLat = 111320;
+  const mPerDegLon = 111320 * Math.cos(cLat*Math.PI/180);
+  return hull.map(p => {
+    const dx = (p[1]-cLon)*mPerDegLon;
+    const dy = (p[0]-cLat)*mPerDegLat;
+    const dist = Math.sqrt(dx*dx+dy*dy) || 1;
+    const scale = (dist+bufferM)/dist;
+    return [
+      cLat + (p[0]-cLat)*scale,
+      cLon + (p[1]-cLon)*scale
+    ];
+  });
+}
+
+/** 闭合环，便于 shoelace 与 Leaflet polygon */
+function closeRing(ring) {
+  if (!ring || ring.length < 3) return ring ? ring.map(p => [p[0], p[1]]) : [];
+  const out = ring.map(p => [p[0], p[1]]);
+  const a = out[0], b = out[out.length - 1];
+  if (a[0] !== b[0] || a[1] !== b[1]) out.push([a[0], a[1]]);
+  return out;
+}
+
+// ============================================================
+//  SIMULATE EDGES (same logic as source file)
+// ============================================================
+function simulateEdges() {
+  const centerLon = 121.438, centerLat = 31.195, spread = 0.018;
+  const gridSize = 28;
+  const nodes = {};
+  let nid = 0;
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      nodes[nid] = {
+        lon: centerLon - spread + (i/gridSize)*spread*2 + gaussRand(0,0.0003),
+        lat: centerLat - spread + (j/gridSize)*spread*2 + gaussRand(0,0.00025),
+        id: nid
+      };
+      nid++;
+    }
+  }
+  const edges = [];
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      const id = i*gridSize + j;
+      if (j < gridSize-1 && Math.random()>0.06) edges.push({u: id, v: i*gridSize+j+1});
+      if (i < gridSize-1 && Math.random()>0.06) edges.push({u: id, v: (i+1)*gridSize+j});
+    }
+  }
+  edges.forEach(e => {
+    const n1 = nodes[e.u], n2 = nodes[e.v];
+    e.midLon = (n1.lon + n2.lon)/2;
+    e.midLat = (n1.lat + n2.lat)/2;
+    e.from = n1; e.to = n2;
+
+    const dx = e.midLon - centerLon, dy = e.midLat - centerLat;
+    const distC = Math.sqrt(dx*dx + dy*dy) / spread;
+    const dSW = Math.sqrt(Math.pow(e.midLon-(centerLon-0.008),2) + Math.pow(e.midLat-(centerLat-0.006),2));
+    const proxSW = Math.max(0, 1 - dSW/0.008);
+    const dSE = Math.sqrt(Math.pow(e.midLon-(centerLon+0.007),2) + Math.pow(e.midLat-(centerLat-0.004),2));
+    const proxSE = Math.max(0, 1 - dSE/0.007);
+    const proxCenter = Math.max(0, 1 - distC*1.5);
+
+    e.csvi_E = Math.max(0.05, Math.min(0.95, gaussRand(0.35 + proxSW*0.3 + proxCenter*0.2, 0.10)));
+    e.csvi_S_env = Math.max(0, Math.min(0.4, gaussRand(0.08, 0.03)));
+    e.csvi_S_contact = Math.max(0, Math.min(0.8, gaussRand(0.35 + proxSE*0.2, 0.08)));
+    e.N_YP = Math.max(0.1, Math.min(0.9, gaussRand(0.45 + proxSE*0.25 + proxCenter*0.1, 0.08)));
+    e.N08 = Math.max(0, Math.min(1, gaussRand(0.48, 0.14)));
+
+    const dPark1 = Math.sqrt(Math.pow(e.midLon-(centerLon-0.005),2) + Math.pow(e.midLat-(centerLat+0.006),2));
+    const parkProx = Math.max(0, 1 - dPark1/0.006);
+    const corridorDist = Math.abs(e.midLat - (centerLat - 0.005));
+    const inCorridor = corridorDist < 0.003 && e.midLon > centerLon-0.01 && e.midLon < centerLon+0.01;
+    e.csvi_AC_phys = Math.max(0.001, Math.min(0.3, gaussRand(0.04 + parkProx*0.15 - (inCorridor?0.03:0), 0.025)));
+    e.csvi_AC_social = Math.max(0, Math.min(0.4, gaussRand(0.06 + proxCenter*0.15, 0.04)));
+
+    e.priority = Math.max(0, Math.min(1,
+      e.csvi_E * (e.csvi_S_env + e.csvi_S_contact) / Math.max(0.001, e.csvi_AC_phys * e.csvi_AC_social + 0.01)
+    ));
+    e.priority = Math.min(1, e.priority / 30);
+    e.W_elder = e.csvi_E * (e.csvi_AC_phys + 1);
+    e.W_work = Math.max(0, e.N_YP * e.N08);
+    const sTotal = e.csvi_S_env + e.csvi_S_contact;
+    e.S_contact_ratio = sTotal > 0 ? e.csvi_S_contact / sTotal : 0;
+  });
+  return edges;
+}
+
+const CSV_FILENAME = 'cld_priority.csv';
+
+function estimateNodePositions(rawEdges) {
+  const nodes = new Set();
+  rawEdges.forEach(r => { nodes.add(r.u); nodes.add(r.v); });
+  const sum = {}, cnt = {};
+  nodes.forEach(n => { sum[n] = [0, 0]; cnt[n] = 0; });
+  rawEdges.forEach(r => {
+    const mx = r.lon, my = r.lat;
+    [r.u, r.v].forEach(id => {
+      sum[id][0] += mx; sum[id][1] += my; cnt[id]++;
+    });
+  });
+  const pos = {};
+  nodes.forEach(n => {
+    pos[n] = { lon: sum[n][0] / cnt[n], lat: sum[n][1] / cnt[n] };
+  });
+  const iters = rawEdges.length > 12000 ? 8 : 24;
+  for (let iter = 0; iter < iters; iter++) {
+    rawEdges.forEach(r => {
+      const mx = r.lon, my = r.lat;
+      pos[r.u].lon = 2 * mx - pos[r.v].lon;
+      pos[r.u].lat = 2 * my - pos[r.v].lat;
+    });
+  }
+  return pos;
+}
+
+function buildEdgesFromCsvRows(rows) {
+  const raw = rows.map(r => ({
+    u: String(r.u),
+    v: String(r.v),
+    lon: +r.lon,
+    lat: +r.lat,
+    csvi_E: +r.csvi_E,
+    csvi_S_env: +r.csvi_S_env,
+    csvi_S_contact: +r.csvi_S_contact,
+    csvi_AC_phys: +r.csvi_AC_phys,
+    csvi_AC_social: +r.csvi_AC_social,
+    N_YP: +r.N_YP,
+    N08: +r.N08,
+    priority: +r.priority
+  }));
+  const pos = estimateNodePositions(raw);
+  return raw.map(r => {
+    const from = pos[r.u], to = pos[r.v];
+    const midLon = (from.lon + to.lon) / 2;
+    const midLat = (from.lat + to.lat) / 2;
+    const sTotal = r.csvi_S_env + r.csvi_S_contact;
+    return {
+      u: r.u, v: r.v,
+      from, to, midLon, midLat,
+      csvi_E: r.csvi_E,
+      csvi_S_env: r.csvi_S_env,
+      csvi_S_contact: r.csvi_S_contact,
+      csvi_AC_phys: r.csvi_AC_phys,
+      csvi_AC_social: r.csvi_AC_social,
+      N_YP: r.N_YP,
+      N08: r.N08,
+      priority: r.priority,
+      W_elder: r.csvi_E * (r.csvi_AC_phys + 1),
+      W_work: Math.max(0, (+r.N_YP || 0) * (+r.N08 || 0)),
+      S_contact_ratio: sTotal > 0 ? r.csvi_S_contact / sTotal : 0
+    };
+  });
+}
+
+async function loadEdges() {
+  try {
+    const rows = await d3.csv(CSV_FILENAME, d3.autoType);
+    if (!rows || !rows.length) throw new Error('empty');
+    if (rows[0].priority === undefined || rows[0].N08 === undefined) throw new Error('需要 priority、N08 等列（W_work=N_YP×N08）');
+    return buildEdgesFromCsvRows(rows);
+  } catch (err) {
+    console.warn('未加载 ' + CSV_FILENAME + '，使用模拟路网。', err);
+    return simulateEdges();
+  }
+}
+
+// ============================================================
+//  CLASSIFICATION（与 map_intervention_nodes 同逻辑）
+// ============================================================
+/** 仅存邻接点 id，供 BFS 用；避免每条无向边两个 {nb,edge} 对象分配 */
+function buildAdjacencyIds(edgeList) {
+  const adj = new Map();
+  for (let i = 0; i < edgeList.length; i++) {
+    const ev = edgeList[i];
+    const u = ev.u, v = ev.v;
+    let au = adj.get(u);
+    if (!au) { au = []; adj.set(u, au); }
+    au.push(v);
+    let av = adj.get(v);
+    if (!av) { av = []; adj.set(v, av); }
+    av.push(u);
+  }
+  return adj;
+}
+
+function vertPosFromActivatedEdges(activatedEdgeList) {
+  const m = new Map();
+  for (let i = 0; i < activatedEdgeList.length; i++) {
+    const ev = activatedEdgeList[i];
+    m.set(ev.u, ev.from);
+    m.set(ev.v, ev.to);
+  }
+  return m;
+}
+
+function vertToPlanarXY(lon, lat) {
+  const kLon = Math.cos(lat * Math.PI / 180);
+  return [lon * kLon, lat];
+}
+
+function dist2xy(ax, ay, bx, by) {
+  const dx = ax - bx;
+  const dy = ay - by;
+  return dx * dx + dy * dy;
+}
+
+function kMeans2LabelsFromVerts(verts, vertPos) {
+  const n = verts.length;
+  if (n < 2) return null;
+  const xy = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const p = vertPos.get(verts[i]);
+    const lon = p && Number.isFinite(p.lon) ? p.lon : 0;
+    const lat = p && Number.isFinite(p.lat) ? p.lat : 0;
+    xy[i] = vertToPlanarXY(lon, lat);
+  }
+  let bestI = 0,
+    bestJ = 1,
+    bestD = -1;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const d = dist2xy(xy[i][0], xy[i][1], xy[j][0], xy[j][1]);
+      if (d > bestD) {
+        bestD = d;
+        bestI = i;
+        bestJ = j;
+      }
+    }
+  }
+  if (bestD < 1e-20) return null;
+  let c0x = xy[bestI][0],
+    c0y = xy[bestI][1];
+  let c1x = xy[bestJ][0],
+    c1y = xy[bestJ][1];
+  const labels = new Uint8Array(n);
+  for (let iter = 0; iter < 40; iter++) {
+    for (let i = 0; i < n; i++) {
+      const d0 = dist2xy(xy[i][0], xy[i][1], c0x, c0y);
+      const d1 = dist2xy(xy[i][0], xy[i][1], c1x, c1y);
+      labels[i] = d0 <= d1 ? 0 : 1;
+    }
+    let s0x = 0,
+      s0y = 0,
+      n0 = 0;
+    let s1x = 0,
+      s1y = 0,
+      n1 = 0;
+    for (let i = 0; i < n; i++) {
+      if (labels[i] === 0) {
+        s0x += xy[i][0];
+        s0y += xy[i][1];
+        n0++;
+      } else {
+        s1x += xy[i][0];
+        s1y += xy[i][1];
+        n1++;
+      }
+    }
+    if (n0 === 0 || n1 === 0) return null;
+    const nc0x = s0x / n0,
+      nc0y = s0y / n0;
+    const nc1x = s1x / n1,
+      nc1y = s1y / n1;
+    if (
+      Math.abs(nc0x - c0x) < 1e-9 &&
+      Math.abs(nc0y - c0y) < 1e-9 &&
+      Math.abs(nc1x - c1x) < 1e-9 &&
+      Math.abs(nc1y - c1y) < 1e-9
+    )
+      break;
+    c0x = nc0x;
+    c0y = nc0y;
+    c1x = nc1x;
+    c1y = nc1y;
+  }
+  return labels;
+}
+
+function seedLabelsLongitudeFallback(verts, vertPos) {
+  const sorted = [...verts];
+  sorted.sort((a, b) => {
+    const pa = vertPos.get(a),
+      pb = vertPos.get(b);
+    return (pa ? pa.lon : 0) - (pb ? pb.lon : 0);
+  });
+  const half = Math.floor(sorted.length / 2);
+  const seedLabel = new Map();
+  if (half < 1 || half >= sorted.length) return seedLabel;
+  for (let i = 0; i < half; i++) seedLabel.set(sorted[i], 0);
+  for (let i = half; i < sorted.length; i++) seedLabel.set(sorted[i], 1);
+  return seedLabel;
+}
+
+function collectActivationVoronoiSeamEdges(allEdges, activatedEdgeList, vertPos) {
+  const seam = new Set();
+  if (!activatedEdgeList.length || !allEdges.length) return seam;
+  const vertSet = new Set();
+  for (let i = 0; i < activatedEdgeList.length; i++) {
+    const ae = activatedEdgeList[i];
+    vertSet.add(ae.u);
+    vertSet.add(ae.v);
+  }
+  const verts = [...vertSet];
+  if (verts.length < 2) return seam;
+
+  let seedLabel = new Map();
+  const km = kMeans2LabelsFromVerts(verts, vertPos);
+  if (km) {
+    for (let i = 0; i < verts.length; i++) seedLabel.set(verts[i], km[i]);
+  } else {
+    seedLabel = seedLabelsLongitudeFallback(verts, vertPos);
+  }
+  if (seedLabel.size < 2) return seam;
+
+  const adj = buildAdjacencyIds(allEdges);
+  const owner = new Map(seedLabel);
+  const q = [...seedLabel.keys()];
+  let qi = 0;
+  while (qi < q.length) {
+    const u = q[qi++];
+    const lu = owner.get(u);
+    const outs = adj.get(u);
+    if (!outs) continue;
+    for (let i = 0; i < outs.length; i++) {
+      const nb = outs[i];
+      if (!owner.has(nb)) {
+        owner.set(nb, lu);
+        q.push(nb);
+      }
+    }
+  }
+  for (let i = 0; i < allEdges.length; i++) {
+    const ev = allEdges[i];
+    const a = owner.get(ev.u);
+    const b = owner.get(ev.v);
+    if (a !== undefined && b !== undefined && a !== b) seam.add(ev);
+  }
+  return seam;
+}
+
+function classifyNodes(edges) {
+  addEmpiricalPercentileRanks(edges);
+  const len = edges.length;
+  const pri = new Array(len);
+  const pElderArr = new Array(len);
+  const pWorkArr = new Array(len);
+  const acPhysArr = new Array(len);
+  for (let i = 0; i < len; i++) {
+    const e = edges[i];
+    pri[i] = e.priority;
+    pElderArr[i] = e.p_elder;
+    pWorkArr[i] = e.p_work;
+    acPhysArr[i] = e.csvi_AC_phys;
+  }
+  const csviBreaks = getClassificationBreaks(pri, 3);
+  const wElderBreaks = getClassificationBreaks(pElderArr, 3);
+  const wWorkBreaks = getClassificationBreaks(pWorkArr, 3);
+  acPhysArr.sort((a, b) => a - b);
+  const nAc = acPhysArr.length;
+  const acPhys50 = nAc ? acPhysArr[Math.floor((nAc - 1) / 2)] : 0;
+
+  edges.forEach(e => {
+    e.csviClass = classifyJenks(e.priority, csviBreaks);
+    e.wElderClass = classifyJenks(e.p_elder, wElderBreaks);
+    e.wWorkClass = classifyJenks(e.p_work, wWorkBreaks);
+  });
+
+  const activated = [], bottleneck = [], critical = [];
+
+  edges.forEach(e => {
+    if (e.csviClass === 2 && (e.wElderClass === 2 || e.wWorkClass === 2)) {
+      if (e.wElderClass === 2 && e.wWorkClass <= 1) e.nodeType = 'act_elder';
+      else if (e.wWorkClass === 2 && e.wElderClass <= 1) e.nodeType = 'act_work';
+      else e.nodeType = 'act_both';
+      activated.push(e);
+      return;
+    }
+    if (e.csviClass === 1 && e.S_contact_ratio > 0.6 && e.wWorkClass === 2 && e.wElderClass <= 1) {
+      e.nodeType = 'critical';
+      critical.push(e);
+      return;
+    }
+    e.nodeType = null;
+  });
+
+  const vertPosAct = vertPosFromActivatedEdges(activated);
+  const connectorSeamSet = collectActivationVoronoiSeamEdges(edges, activated, vertPosAct);
+  const seamEdges = Array.from(connectorSeamSet);
+
+  edges.forEach(e => {
+    if (e.nodeType) return;
+    if (e.csvi_AC_phys > acPhys50) return;
+    if (!connectorSeamSet.has(e)) return;
+    e.nodeType = 'bottleneck';
+    bottleneck.push(e);
+  });
+
+  return { activated, bottleneck, critical, seamEdges, acPhysMedian: acPhys50 };
+}
+
+// ============================================================
+//  FIELD SYSTEM SELECTION ALGORITHM
+//  DBSCAN on activated+critical nodes → top-3 clusters → convex hull
+// ============================================================
+/** 三块场域面积之和的目标总量（10 ha），按簇 priority 比例分配 */
+const MAX_TOTAL_FIELD_AREA_M2 = 100000;
+
+/**
+ * 在局部平面近似下，将 [lat,lon] 闭合环相对其质心缩放 factor（面积 ∝ factor²）。
+ * 用于在保留聚类结果的前提下满足总用地上限。
+ */
+function scaleLatLonRingTowardCentroid(ring, factor) {
+  if (!ring || ring.length < 3 || factor >= 1 - 1e-12) {
+    return ring.map(p => [p[0], p[1]]);
+  }
+  let n = ring.length;
+  const closed = n > 1 && ring[0][0] === ring[n - 1][0] && ring[0][1] === ring[n - 1][1];
+  const m = closed ? n - 1 : n;
+  let cLat = 0, cLon = 0;
+  for (let i = 0; i < m; i++) {
+    cLat += ring[i][0];
+    cLon += ring[i][1];
+  }
+  cLat /= m;
+  cLon /= m;
+  const mPerDegLat = 111320;
+  const mPerDegLon = 111320 * Math.cos(cLat * Math.PI / 180);
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const p = ring[i];
+    const dx = (p[1] - cLon) * mPerDegLon;
+    const dy = (p[0] - cLat) * mPerDegLat;
+    out.push([
+      cLat + (dy * factor) / mPerDegLat,
+      cLon + (dx * factor) / mPerDegLon
+    ]);
+  }
+  if (closed && out.length > 1) {
+    const a = out[0], b = out[out.length - 1];
+    if (a[0] !== b[0] || a[1] !== b[1]) out[out.length - 1] = [a[0], a[1]];
+  }
+  return out;
+}
+
+/**
+ * 将簇的凸包多边形调整为约 targetM2（m²）：
+ * 凸包面积 ≥ 目标 → 相对质心缩小；&lt; 目标 → 外扩缓冲，仍不足则相对质心放大。
+ */
+function fitClusterHullToTargetAreaM2(hull, targetM2) {
+  const MAX_BUF_M = 2800;
+  function areaBuffered(bufM) {
+    return polygonAreaM2(closeRing(bufferHull(hull, bufM)));
+  }
+  let ring = closeRing(hull);
+  let a0 = polygonAreaM2(ring);
+  if (!Number.isFinite(a0) || a0 < 0) a0 = 0;
+
+  if (a0 >= targetM2) {
+    const s = Math.sqrt(targetM2 / Math.max(a0, 1e-9));
+    ring = closeRing(scaleLatLonRingTowardCentroid(ring, s));
+    return { hull: ring, areaM2: polygonAreaM2(ring) };
+  }
+  if (areaBuffered(MAX_BUF_M) < targetM2) {
+    ring = closeRing(bufferHull(hull, MAX_BUF_M));
+    const aMax = polygonAreaM2(ring);
+    const s = Math.sqrt(targetM2 / Math.max(aMax, 1e-6));
+    ring = closeRing(scaleLatLonRingTowardCentroid(ring, s));
+    return { hull: ring, areaM2: polygonAreaM2(ring) };
+  }
+  let lo = 0, hi = MAX_BUF_M;
+  for (let iter = 0; iter < 26; iter++) {
+    const mid = (lo + hi) / 2;
+    if (areaBuffered(mid) < targetM2) lo = mid;
+    else hi = mid;
+  }
+  ring = closeRing(bufferHull(hull, hi));
+  let a = polygonAreaM2(ring);
+  if (a > targetM2 * 1.0002) {
+    const s = Math.sqrt(targetM2 / a);
+    ring = closeRing(scaleLatLonRingTowardCentroid(ring, s));
+    a = polygonAreaM2(ring);
+  }
+  return { hull: ring, areaM2: a };
+}
+
+function dbscan(points, eps, minPts) {
+  // points: [{lat,lon,...}] → 写入 _mx,_my
+  const n = points.length;
+  attachPlanarMetersXY(points);
+  const eps2 = eps * eps;
+  const labels = new Int32Array(n).fill(-1); // -1=unvisited
+  let clusterId = 0;
+
+  function regionQuery(pIdx) {
+    const neighbors = [];
+    const p = points[pIdx];
+    const px = p._mx, py = p._my;
+    for (let i = 0; i < n; i++) {
+      const q = points[i];
+      const dx = px - q._mx, dy = py - q._my;
+      if (dx * dx + dy * dy <= eps2) neighbors.push(i);
+    }
+    return neighbors;
+  }
+
+  for (let i=0; i<n; i++) {
+    if (labels[i] !== -1) continue;
+    const neighbors = regionQuery(i);
+    if (neighbors.length < minPts) { labels[i] = -2; continue; } // noise
+    labels[i] = clusterId;
+    const seeds = [...neighbors];
+    let si = 0;
+    while (si < seeds.length) {
+      const q = seeds[si++];
+      if (labels[q] !== -1 && labels[q] !== -2 && labels[q] !== clusterId) continue;
+      if (labels[q] === -1 || labels[q] === -2) labels[q] = clusterId;
+      const qNeighbors = regionQuery(q);
+      if (qNeighbors.length >= minPts) {
+        for (const nn of qNeighbors) {
+          if (labels[nn] === -1 || labels[nn] === -2) seeds.push(nn);
+        }
+      }
+    }
+    clusterId++;
+  }
+  return { labels, nClusters: clusterId };
+}
+
+function selectFieldSystems(edges, classified) {
+  // Candidate points = activated + critical (these become catalyst nodes)
+  const catalystEdges = [...classified.activated, ...classified.critical];
+
+  // Take top priority fraction for tractability
+  const sorted = catalystEdges.sort((a, b) => b.priority - a.priority);
+  const MAX_DBSCAN_POINTS = 200;
+  const topN = Math.min(sorted.length, Math.ceil(sorted.length * 0.25));
+  const candidates = sorted.slice(0, Math.min(sorted.length, Math.max(topN, 20), MAX_DBSCAN_POINTS));
+
+  const points = candidates.map((e,i) => ({lat:e.midLat, lon:e.midLon, idx:i, edge:e}));
+
+  // Try DBSCAN with increasing eps until we get ≥2 clusters
+  let eps = 180, minPts = 3;
+  let result;
+  for (let attempt=0; attempt<5; attempt++) {
+    result = dbscan(points, eps, minPts);
+    if (result.nClusters >= 2) break;
+    eps += 60;
+    if (minPts > 2) minPts--;
+  }
+
+  // Score each cluster by sum of priority
+  const clusters = [];
+  for (let c=0; c<result.nClusters; c++) {
+    const members = [];
+    for (let i=0; i<points.length; i++) {
+      if (result.labels[i] === c) members.push(points[i]);
+    }
+    if (members.length < 2) continue;
+    const sumPriority = members.reduce((s,m) => s+m.edge.priority, 0);
+    clusters.push({id:c, members, sumPriority});
+  }
+
+  clusters.sort((a,b) => b.sumPriority - a.sumPriority);
+  const topClusters = clusters.slice(0, 3);
+
+  let totalPriority = 0;
+  for (let ti = 0; ti < topClusters.length; ti++) totalPriority += topClusters[ti].sumPriority;
+  if (totalPriority <= 1e-18) totalPriority = topClusters.length || 1;
+
+  const fieldSystems = topClusters.map((cl, fi) => {
+    const hullPts = cl.members.map(m => [m.lat, m.lon]);
+    let hull = convexHull(hullPts);
+    if (hull.length < 3) {
+      const cLat = hullPts.reduce((s, p) => s + p[0], 0) / hullPts.length;
+      const cLon = hullPts.reduce((s, p) => s + p[1], 0) / hullPts.length;
+      const r = 0.0013;
+      hull = [];
+      for (let a = 0; a < 2 * Math.PI; a += Math.PI / 12) {
+        hull.push([cLat + r * Math.sin(a), cLon + r * Math.cos(a) / Math.cos(cLat * Math.PI / 180)]);
+      }
+    }
+
+    const targetM2 = MAX_TOTAL_FIELD_AREA_M2 * (cl.sumPriority / totalPriority);
+    const { hull: fitted, areaM2 } = fitClusterHullToTargetAreaM2(hull, targetM2);
+
+    return {
+      id: fi,
+      members: cl.members,
+      hull: fitted,
+      areaM2,
+      areaHa: areaM2 / 10000,
+      sumPriority: cl.sumPriority,
+      targetM2,
+      catalystEdges: cl.members.map(m => m.edge)
+    };
+  });
+
+  /** 统计用全量瓶颈引用，避免 .slice() 大数组拷贝 */
+  const corridorEdges = classified.bottleneck;
+
+  return { fieldSystems, corridorEdges, eps, areaPlan: 'priority10ha' };
+}
+
+// ============================================================
+//  RENDER（瓶颈边段全量绘制；底网/触媒仍抽样以减负）
+// ============================================================
+const FIELD_COLORS = ['#ff4dad', '#ff6b9d', '#e91e8c'];
+const FIELD_NAMES = ['场域 A · 西南簇', '场域 B · 东南簇', '场域 C · 中心簇'];
+
+/** 绘制上限（瓶颈除外；统计仍用全量） */
+const PERF = {
+  maxCatalystMarkersPerField: 18,
+  maxCorridorMidMarkers: 0,
+  maxBaseSegs: 140
+};
+
+function takeTopByPriority(edgeArr, maxN) {
+  if (edgeArr.length <= maxN) return edgeArr;
+  return [...edgeArr].sort((a, b) => b.priority - a.priority).slice(0, maxN);
+}
+
+/** 地图上实际绘制的瓶颈类线段：严格瓶颈 → 接缝 → 低 AC_phys（避免视口只在三块场域内、看不见全市瓶颈网） */
+function getEdgesToDrawAsBottleneck(classified, allEdges) {
+  const strict = classified.bottleneck;
+  if (strict.length > 0) return { list: strict, mode: 'strict' };
+  const seam = classified.seamEdges || [];
+  if (seam.length > 0) return { list: seam, mode: 'seam' };
+  const med = classified.acPhysMedian;
+  const low = [];
+  for (let i = 0; i < allEdges.length; i++) {
+    const e = allEdges[i];
+    if (e.nodeType === 'act_elder' || e.nodeType === 'act_work' || e.nodeType === 'act_both' || e.nodeType === 'critical') continue;
+    if (e.csvi_AC_phys <= med) low.push(e);
+  }
+  return { list: low, mode: 'lowAc' };
+}
+
+function render(edges, classified, fields, onDone) {
+  const vectorRenderer = L.canvas({ padding: 0.5 });
+  /** 瓶颈单独用第二套 Canvas，后添加并 bringToFront，避免被场域面盖住 */
+  const bottleneckRenderer = L.canvas({ padding: 0.5 });
+  let totalArea = 0;
+  let totalCatalysts = 0;
+  let bottleneckDrawPack = { list: [], mode: 'none' };
+
+  function phaseLines() {
+    const plen = edges.length;
+    const pp = new Float64Array(plen);
+    for (let i = 0; i < plen; i++) pp[i] = edges[i].priority;
+    pp.sort();
+    const idx = plen ? Math.min(Math.floor(plen * 0.993), plen - 1) : 0;
+    const pThresh = plen ? pp[idx] : 0;
+    const cand = [];
+    for (let i = 0; i < plen; i++) {
+      const e = edges[i];
+      if (e.priority >= pThresh) cand.push(e);
+    }
+    const baseShow = cand.length <= PERF.maxBaseSegs ? cand : takeTopByPriority(cand, PERF.maxBaseSegs);
+    const netSegs = baseShow.map(e => [[e.from.lat, e.from.lon], [e.to.lat, e.to.lon]]);
+    if (netSegs.length) {
+      L.polyline(netSegs, {
+        renderer: vectorRenderer, interactive: false, smoothFactor: 0,
+        color: 'rgba(233,30,140,0.09)', weight: 1, opacity: 0.5
+      }).addTo(map);
+    }
+  }
+
+  function phasePolygonsAndLabels() {
+    fields.fieldSystems.forEach((fs, i) => {
+      const color = FIELD_COLORS[i] || '#fff';
+      totalArea += fs.areaHa;
+      totalCatalysts += fs.catalystEdges.length;
+      L.polygon(fs.hull, {
+        renderer: vectorRenderer,
+        color: color,
+        weight: 2.5,
+        opacity: 0.85,
+        fillColor: color,
+        fillOpacity: 0.08,
+        interactive: false
+      }).addTo(map);
+      const cLat = fs.members.reduce((s, m) => s + m.lat, 0) / fs.members.length;
+      const cLon = fs.members.reduce((s, m) => s + m.lon, 0) / fs.members.length;
+      const labelIcon = L.divIcon({
+        html: `<div style="
+        color:${color};font-size:11px;font-weight:700;letter-spacing:1px;
+        text-shadow:0 0 8px rgba(0,0,0,0.8);white-space:nowrap;
+        font-family:'DM Sans','Noto Sans SC',sans-serif;
+      ">${FIELD_NAMES[i] || 'Field ' + (i + 1)}<br>
+      <span style="font-size:9px;font-weight:400;opacity:0.7">${fs.areaHa.toFixed(1)} ha · ${fs.catalystEdges.length} catalysts</span>
+      </div>`,
+        className: '',
+        iconSize: [160, 40],
+        iconAnchor: [80, 20]
+      });
+      L.marker([cLat, cLon], { icon: labelIcon, interactive: false }).addTo(map);
+    });
+  }
+
+  function phaseCatalystDots() {
+    fields.fieldSystems.forEach((fs, i) => {
+      const color = FIELD_COLORS[i] || '#fff';
+      const catSrc = fs.catalystEdges;
+      const catShow = catSrc.length <= PERF.maxCatalystMarkersPerField
+        ? catSrc
+        : takeTopByPriority(catSrc, PERF.maxCatalystMarkersPerField);
+      for (let j = 0; j < catShow.length; j++) {
+        const e = catShow[j];
+        const isCritical = e.nodeType === 'critical';
+        L.circleMarker([e.midLat, e.midLon], {
+          renderer: vectorRenderer,
+          radius: isCritical ? 3.5 : 4.5,
+          fillColor: isCritical ? '#e91e8c' : '#ff4dad',
+          color: color,
+          weight: 1,
+          fillOpacity: isCritical ? 0.48 : 0.45,
+          opacity: 0.92,
+          interactive: false
+        }).addTo(map);
+      }
+    });
+  }
+
+  function phaseCorridorDots() {
+    const cors = fields.corridorEdges;
+    const maxCor = PERF.maxCorridorMidMarkers;
+    if (maxCor <= 0 || !cors.length) return;
+    const step = cors.length <= maxCor ? 1 : Math.ceil(cors.length / maxCor);
+    for (let ci = 0; ci < cors.length; ci += step) {
+      const be = cors[ci];
+      L.circleMarker([be.midLat, be.midLon], {
+        renderer: vectorRenderer,
+        radius: 2.5,
+        fillColor: '#ff6b9d',
+        color: 'rgba(255,179,217,0.45)',
+        weight: 1,
+        fillOpacity: 0.5,
+        opacity: 0.85,
+        interactive: false
+      }).addTo(map);
+    }
+  }
+
+  function phaseBottleneckOverlay() {
+    bottleneckDrawPack = getEdgesToDrawAsBottleneck(classified, edges);
+    if (bottleneckDrawPack.mode !== 'strict' && bottleneckDrawPack.list.length) {
+      console.info('[场域选址] 瓶颈图绘模式:', bottleneckDrawPack.mode, '条数', bottleneckDrawPack.list.length,
+        '（严格瓶颈', classified.bottleneck.length, '）');
+    }
+    const bot = bottleneckDrawPack.list;
+    const n = bot.length;
+    const botSegs = new Array(n);
+    for (let bi = 0; bi < n; bi++) {
+      const be = bot[bi];
+      botSegs[bi] = [[be.from.lat, be.from.lon], [be.to.lat, be.to.lon]];
+    }
+    if (!botSegs.length) return;
+    const thick = n > 4000 ? 1 : 1.35;
+    const col = bottleneckDrawPack.mode === 'strict'
+      ? 'rgba(255,120,180,0.92)'
+      : bottleneckDrawPack.mode === 'seam'
+        ? 'rgba(255,160,200,0.88)'
+        : 'rgba(255,140,190,0.72)';
+    const layer = L.polyline(botSegs, {
+      renderer: bottleneckRenderer,
+      interactive: false,
+      smoothFactor: 0,
+      color: col,
+      weight: thick,
+      opacity: 0.95
+    }).addTo(map);
+    if (typeof layer.bringToFront === 'function') layer.bringToFront();
+  }
+
+  function phaseStatsAndFit() {
+    fields.fieldSystems.forEach((fs, i) => {
+      const el = document.getElementById(`stat-${['a', 'b', 'c'][i]}`);
+      if (el) el.textContent = `${fs.areaHa.toFixed(1)} ha · ${fs.catalystEdges.length} nodes`;
+    });
+    document.getElementById('stat-total').textContent = `${totalArea.toFixed(1)} ha`;
+    const el10 = document.getElementById('stat-10ha');
+    if (el10) {
+      if (fields.areaPlan === 'priority10ha') {
+        el10.textContent = `按 Σpriority 分配 10 ha（合计 ${totalArea.toFixed(2)} ha）`;
+      } else {
+        el10.textContent = totalArea >= 10
+          ? `已超过（合计 ${totalArea.toFixed(2)} ha）`
+          : `未超过（合计 ${totalArea.toFixed(2)} ha）`;
+      }
+    }
+    document.getElementById('stat-catalysts').textContent = `${totalCatalysts}`;
+    const strictN = fields.corridorEdges.length;
+    const drawnN = bottleneckDrawPack.list.length;
+    const dm = bottleneckDrawPack.mode;
+    document.getElementById('stat-corridors').textContent = dm === 'strict'
+      ? `${strictN}（图绘严格）`
+      : `${strictN} 严格 / ${drawnN} 图绘${dm === 'seam' ? '·接缝' : dm === 'lowAc' ? '·低AC' : ''}`;
+
+    const allPts = [];
+    fields.fieldSystems.forEach(fs => fs.hull.forEach(p => allPts.push(p)));
+    const blist = bottleneckDrawPack.list;
+    for (let bi = 0; bi < blist.length; bi++) {
+      const be = blist[bi];
+      allPts.push([be.from.lat, be.from.lon], [be.to.lat, be.to.lon]);
+    }
+    if (allPts.length) {
+      let minLat = allPts[0][0], maxLat = allPts[0][0], minLon = allPts[0][1], maxLon = allPts[0][1];
+      for (let k = 1; k < allPts.length; k++) {
+        const p = allPts[k];
+        if (p[0] < minLat) minLat = p[0];
+        if (p[0] > maxLat) maxLat = p[0];
+        if (p[1] < minLon) minLon = p[1];
+        if (p[1] > maxLon) maxLon = p[1];
+      }
+      map.fitBounds([[minLat - 0.003, minLon - 0.003], [maxLat + 0.003, maxLon + 0.003]], { animate: false });
+    }
+    bringStudyBoundaryToFront();
+    if (typeof onDone === 'function') onDone();
+  }
+
+  requestAnimationFrame(() => {
+    phaseLines();
+    requestAnimationFrame(() => {
+      phasePolygonsAndLabels();
+      requestAnimationFrame(() => {
+        phaseCatalystDots();
+        requestAnimationFrame(() => {
+          phaseCorridorDots();
+          requestAnimationFrame(() => {
+            phaseBottleneckOverlay();
+            requestAnimationFrame(phaseStatsAndFit);
+          });
+        });
+      });
+    });
+  });
+}
+
+// ============================================================
+//  MAIN（分帧让「加载中」有机会绘制，避免长时间同步脚本看起来像死锁）
+// ============================================================
+const mapLoadingEl = document.getElementById('map-loading');
+function hideMapLoading() {
+  if (mapLoadingEl) mapLoadingEl.classList.add('done');
+}
+
+loadEdges().then(edges => {
+  setTimeout(() => {
+    let classified, fields;
+    try {
+      classified = classifyNodes(edges);
+      fields = selectFieldSystems(edges, classified);
+    } catch (err) {
+      console.error(err);
+      hideMapLoading();
+      return;
+    }
+    setTimeout(() => {
+      try {
+        render(edges, classified, fields, () => requestAnimationFrame(hideMapLoading));
+      } catch (err) {
+        console.error(err);
+        hideMapLoading();
+      }
+    }, 0);
+  }, 0);
+});
+</script>
+</body>
+</html>
