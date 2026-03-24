@@ -1,6 +1,6 @@
 /**
  * 触媒簇 ↔ 瓶颈接缝 与场域选址对齐。
- * runCatalystDbscan 与 field_system_selection.selectFieldSystems 共用同一套
+ * runCatalystDbscan 与场域选址页（xujiahui-site-selection.html / field_system_selection.html）内 selectFieldSystems 共用同一套
  * 候选边、DBSCAN 参数与 ε 步进；接缝在多簇时为「各触媒簇路网扩张交界」。
  * 若激活顶点侧无法形成 ≥2 种簇标签，回退 k-means(k=2) / 经度对半（与旧版兼容）。
  */

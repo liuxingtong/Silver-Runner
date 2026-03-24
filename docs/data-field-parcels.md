@@ -1,6 +1,6 @@
 # 地块 GeoJSON（已不再接入主页面）
 
-**当前主流程**：场域边界为 **质心圆**（见 `cluster-field-circles.js` + `field_system_selection.html`），页面 **不再** `fetch` 本文件。
+**当前主流程**：场域边界为 **质心圆**（见 `cluster-field-circles.js` + `xujiahui-site-selection.html` / `field_system_selection.html`），页面 **不再** `fetch` 本文件。
 
 以下为历史/备用说明：若你自行 fork 再接地块，可参考 `field-parcels.js` 与下列数据约定。
 

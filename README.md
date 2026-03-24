@@ -27,7 +27,8 @@ npm run build
 | `1narrative-framework.html` | 主叙事框架，**勿单独改被 iframe 引用的文件名/相对路径**除非同步修改此处 |
 | `map_E_exposure.html` / `map_S_stressor.html` / `map_AC_buffer.html` | CSVI 三维度地图 |
 | `map_intervention_nodes.html` | 激活 · 瓶颈 · 临界三类节点 |
-| `field_system_selection.html` | 触媒 → 廊道 → 场域三尺度选址（双圆场域、玫红廊道） |
+| `xujiahui-site-selection.html` | **场域系统选址主页面**（叙事 S9 iframe）：双圆场域、大徐家汇 OSM 边界、轴线/多边形选址、用地与 POI 导入；廊道折线默认不绘制 |
+| `field_system_selection.html` | 同算法独立页，**绘制**玫红簇间廊道折线（无选址工具栏） |
 | `csvi-model.html` | CSVI 结构示意 |
 | `node-type-cards (1).html` | 三类节点类型卡 |
 
@@ -38,6 +39,7 @@ npm run build
 | `npm run sync:cld` | `cld_priority.csv` → `public/` |
 | `npm run filter:cld-daxujiahui` | 按大徐家汇四街道并集筛选 CSV |
 | `npm run fetch:daxujiahui-4` | 拉取四街道边界 GeoJSON → `data/` |
+| `npm run clip:lan-use` | 需已安装 Python `pyshp`：将 `data/lan_use.shp` 按大徐家汇 bbox 裁剪为 `data/lan_use_daxujiahui.geojson`（供 `xujiahui-site-selection.html` 用地统计） |
 | `npm run fetch:field-parcels` | （可选）Overpass 示例地块，易超时 |
 
 共享逻辑脚本：`catalyst-seam-clusters.js`、`corridor-bottleneck-routing.js`、`cluster-field-circles.js`、`xujiahui-osm-boundary.js`。

@@ -128,7 +128,7 @@
 | 节点类型 | 判定条件                                                                                                               | 干预逻辑       |
 | ---- | ------------------------------------------------------------------------------------------------------------------ | ---------- |
 | 激活   | Jenks：CSVI 高档 ∧（W_elder 高档 ∨ W_work 高档）；W 两轴先转**研究区内经验分位**再 Jenks 三档；定义 W_elder=E×(AC_phys+1)，W_work=N_YP×Q（Q≡N08） | 界面与可进入性    |
-| 瓶颈   | 非激活非临界；AC_phys≤**全域下中位**；边∈**触媒DBSCAN簇多源BFS分界**（与`field_system_selection`同源；退化时两簇k-means）                          | 基础设施与连通    |
+| 瓶颈   | 非激活非临界；AC_phys≤**全域下中位**；边∈**触媒DBSCAN簇多源BFS分界**（与场域选址页 `xujiahui-site-selection.html` / `field_system_selection.html` 同源；退化时两簇k-means）                          | 基础设施与连通    |
 | 临界   | CSVI 中档；S_contact/S>0.6；W_work 高档；W_elder 非高档                                                                      | 边缘过渡，单干预撬动 |
 
 
