@@ -119,7 +119,7 @@
   - 激活（三角/星标）：CSVI高、至少一W轴高；子类标签 A₁/A₂/A₃
   - 瓶颈（方标）：AC_phys较低50%、触媒DBSCAN簇扩张交界（BFS Voronoi；与场域簇同源）
   - 临界（圆标）：CSVI中、S_contact主导、W_work高W_elder低
-- 中部：全宽嵌入 `**node-type-cards (1).html`**（或导出图）
+- 中部：全宽嵌入 `**node-type-cards-v3.html`**（或导出图）
 - 下方：一句过渡——「下一页同套判定叠加在街段地图上」
 
 **判定条件简表（与 `map_intervention_nodes.html` 一致）：**

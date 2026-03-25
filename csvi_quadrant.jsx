@@ -21,6 +21,31 @@ const Q_LABELS = {
   Q4: { cn: "工作主导", en: "Work-Dominated" },
 };
 
+/** 与 ac-dom-aggregate.js 同步：五主导列齐全则五列均值；否则四列齐全则四列均值；否则 csvi_AC_phys */
+const AC_DOM_KEYS = ["AC_med_dom", "AC_tech_dom", "AC_mkt_dom", "AC_sport_dom", "AC_soc_cul_dom"];
+const AC_DOM_KEYS_LEGACY = ["AC_med_dom", "AC_tech_dom", "AC_mkt_dom", "AC_sport_dom"];
+function acCellNum(d, k) {
+  if (!d || d[k] === "" || d[k] == null) return NaN;
+  const n = Number(d[k]);
+  return Number.isFinite(n) ? n : NaN;
+}
+function effectiveAcPhysFromRow(d) {
+  const vals5 = AC_DOM_KEYS.map((k) => acCellNum(d, k));
+  if (vals5.every((v) => Number.isFinite(v)))
+    return vals5.reduce((s, v) => s + v, 0) / 5;
+  const vals4 = AC_DOM_KEYS_LEGACY.map((k) => acCellNum(d, k));
+  if (vals4.every((v) => Number.isFinite(v)))
+    return vals4.reduce((s, v) => s + v, 0) / 4;
+  const p = Number(d.csvi_AC_phys);
+  return Number.isFinite(p) ? p : 0;
+}
+function rowHasAcDomSplit(d) {
+  return (
+    AC_DOM_KEYS.every((k) => Number.isFinite(acCellNum(d, k))) ||
+    AC_DOM_KEYS_LEGACY.every((k) => Number.isFinite(acCellNum(d, k)))
+  );
+}
+
 /* ═══════════════════ COLOR SCALE ═══════════════════ */
 const STOPS = [[0,[22,12,24]],[.25,[85,32,78]],[.5,[145,52,118]],[.75,[185,66,145]],[1,[218,75,163]]];
 function csviRgb(v) {
@@ -88,7 +113,11 @@ function makeDemoData(n = 3000) {
     const S = csvi_S_env + csvi_S_contact;
     const AC = csvi_AC_phys * csvi_AC_social;
     const CSVI = (csvi_E * S) / (AC + 1);
-    return { id: i, W_work, W_elder, CSVI, csvi_E, csvi_S_env, csvi_S_contact, csvi_AC_phys, csvi_AC_social, S, AC, N_YP, N08 };
+    return {
+      id: i, W_work, W_elder, CSVI, csvi_E, csvi_S_env, csvi_S_contact,
+      csvi_AC_phys, ac_phys_tabular: csvi_AC_phys, hasAcDom: false,
+      csvi_AC_social, S, AC, N_YP, N08,
+    };
   });
   return attachPercentileRanks(arr);
 }
@@ -99,16 +128,22 @@ function processUploadedRows(rows) {
     const N_YP = +d.N_YP || 0;
     const N08  = +d.N08 || 0;
     const csvi_E = +d.csvi_E || 0;
-    const csvi_AC_phys = +d.csvi_AC_phys || 0;
+    const csvi_AC_phys_eff = effectiveAcPhysFromRow(d);
+    const csvi_AC_phys_tab = Number(d.csvi_AC_phys) || 0;
+    const hasAcDom = rowHasAcDomSplit(d);
     const csvi_AC_social = +d.csvi_AC_social || 0;
     const csvi_S_env = +d.csvi_S_env || 0;
     const csvi_S_contact = +d.csvi_S_contact || 0;
     const W_work = N_YP * N08;
-    const W_elder = csvi_E * (csvi_AC_phys + 1);
+    const W_elder = csvi_E * (csvi_AC_phys_eff + 1);
     const S = csvi_S_env + csvi_S_contact;
-    const AC = csvi_AC_phys * csvi_AC_social;
+    const AC = csvi_AC_phys_eff * csvi_AC_social;
     const CSVI = (csvi_E * S) / (AC + 1);
-    return { id: i, W_work, W_elder, CSVI, csvi_E, csvi_S_env, csvi_S_contact, csvi_AC_phys, csvi_AC_social, S, AC, N_YP, N08, lon: +d.lon, lat: +d.lat };
+    return {
+      id: i, W_work, W_elder, CSVI, csvi_E, csvi_S_env, csvi_S_contact,
+      csvi_AC_phys: csvi_AC_phys_eff, ac_phys_tabular: csvi_AC_phys_tab, hasAcDom,
+      csvi_AC_social, S, AC, N_YP, N08, lon: +d.lon, lat: +d.lat,
+    };
   });
   return attachPercentileRanks(out);
 }
@@ -250,7 +285,7 @@ function QuadrantCanvas({ data, width, height, hovered, setHovered, thresholds }
     ctx.save();
     ctx.translate(14, MARGIN.top + MARG_H + plotH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("W_elder  =  E × (AC_phys+1)    →    老年人停留意愿", 0, 0);
+      ctx.fillText("W_elder  =  E × (AC_agg+1)    →    老年人停留意愿", 0, 0);
     ctx.restore();
 
     // — Marginal: top (W_work density) —
@@ -337,7 +372,8 @@ function QuadrantCanvas({ data, width, height, hovered, setHovered, thresholds }
           <Row label="E (暴露)" val={hovered.csvi_E.toFixed(3)} />
           <Row label="S_env" val={hovered.csvi_S_env.toFixed(3)} />
           <Row label="S_contact" val={hovered.csvi_S_contact.toFixed(3)} />
-          <Row label="AC_phys" val={hovered.csvi_AC_phys.toFixed(4)} />
+          <Row label="AC_phys（矩阵用）" val={hovered.csvi_AC_phys.toFixed(4)} />
+          {hovered.hasAcDom ? <Row label="AC_phys（表列）" val={hovered.ac_phys_tabular.toFixed(4)} /> : null}
           <Row label="AC_social" val={hovered.csvi_AC_social.toFixed(3)} />
         </div>
       )}
@@ -434,7 +470,8 @@ function Legend() {
       <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 10, color: T.textDim, lineHeight: 1.65, wordBreak: "keep-all", lineBreak: "strict" }}>
         <div style={{ whiteSpace: "nowrap" }}><span style={{ color: T.accent, fontWeight: 600 }}>CSVI</span> = E × S ÷ (AC + 1)</div>
         <div style={{ whiteSpace: "nowrap" }}>横轴 <span style={{ color: T.accent }}>W_work</span> = N_YP × Q</div>
-        <div style={{ whiteSpace: "nowrap" }}>纵轴 <span style={{ color: T.accent }}>W_elder</span> = E × (AC_phys+1)</div>
+        <div style={{ whiteSpace: "nowrap" }}>纵轴 <span style={{ color: T.accent }}>W_elder</span> = E × (AC_agg+1)</div>
+        <div style={{ opacity: 0.55, fontSize: 9, marginTop: 3, lineHeight: 1.5 }}>AC_agg：表内五主导列（含 <code>AC_soc_cul_dom</code>）<strong>齐全</strong>时为五列算术平均；仅四列齐全时为四列平均；否则为 <code>csvi_AC_phys</code>（本矩阵不拆资源类型）。</div>
         <div style={{ opacity: 0.5, fontSize: 9, marginTop: 4 }}>点的大小与颜色表示 CSVI 高低。</div>
       </div>
     </div>

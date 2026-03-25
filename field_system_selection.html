@@ -211,10 +211,6 @@
       <div class="lg-symbol"><svg width="16" height="16"><circle cx="8" cy="8" r="5.5" fill="#ff4dad" fill-opacity="0.55" stroke="#ffb3d9" stroke-width="1.2"/></svg></div>
       <div class="lg-label">激活节点（Canvas 圆点抽样）<span class="lg-sub">性能模式关闭悬停详情；斜土路/田子坊型仍按分类着色</span></div>
     </div>
-    <div class="lg-item">
-      <div class="lg-symbol"><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="#ff4dad" fill-opacity="0.3" stroke="#ff4dad" stroke-width="1.5"/></svg></div>
-      <div class="lg-label">临界节点 → 低强度触媒<span class="lg-sub">仅激活 W_elder 即可</span></div>
-    </div>
   </div>
   <hr class="lg-divider">
   <div class="lg-section">
@@ -256,8 +252,8 @@
 <!-- Algorithm -->
 <div class="algo-panel">
   <div class="ap-title">选址算法 · 触媒 → 廊道 → 边界</div>
-  <div class="ap-step"><em>Step 1</em> 节点分类：激活 / 瓶颈 / 临界（瓶颈接缝与 Step 2 共用 <code>catalyst-seam-clusters.js</code>）</div>
-  <div class="ap-step"><em>Step 2</em> <strong>触媒</strong>：激活∪临界边中点 DBSCAN（ε=180m 起可调, minPts=3；与场域块同源）</div>
+  <div class="ap-step"><em>Step 1</em> 输入边段先限制为<strong>大徐家汇边界内</strong>（中点在界内）；节点分类：激活 / 瓶颈（接缝与 Step 2 共用 <code>catalyst-seam-clusters.js</code>）</div>
+  <div class="ap-step"><em>Step 2</em> <strong>触媒</strong>：激活边中点 DBSCAN（ε=180m 起可调, minPts=3；与场域块同源）</div>
   <div class="ap-step"><em>Step 3</em> <strong>触媒</strong>：簇内 ≥5 点且<strong>最大点距 &gt; 520m</strong> → 更紧 ε 子 DBSCAN，至多 3 轮分裂</div>
   <div class="ap-step"><em>Step 4</em> <strong>触媒</strong>：按簇 Σpriority 排序取 Top-<em>6</em></div>
   <div class="ap-step"><em>Step 5</em> <strong>边界</strong>：质心双圆（实线核心 / 虚线缓冲）；r<sub>叙事</sub>=√(分配面积/π)，r<sub>点云</sub>=最远触媒距+缓冲；取 min/max 得内外圆</div>
@@ -640,11 +636,6 @@ function classifyNodes(edges) {
       activated.push(e);
       return;
     }
-    if (e.csviClass === 1 && e.S_contact_ratio > 0.6 && e.wWorkClass === 2 && e.wElderClass <= 1) {
-      e.nodeType = 'critical';
-      critical.push(e);
-      return;
-    }
     e.nodeType = null;
   });
 
@@ -926,7 +917,7 @@ function getEdgesToDrawAsBottleneck(classified, allEdges) {
   const low = [];
   for (let i = 0; i < allEdges.length; i++) {
     const e = allEdges[i];
-    if (e.nodeType === 'act_elder' || e.nodeType === 'act_work' || e.nodeType === 'act_both' || e.nodeType === 'critical') continue;
+    if (e.nodeType === 'act_elder' || e.nodeType === 'act_work' || e.nodeType === 'act_both') continue;
     if (e.csvi_AC_phys <= med) low.push(e);
   }
   return { list: low, mode: 'lowAc' };
@@ -1020,14 +1011,13 @@ function render(edges, classified, fields, onDone) {
         : takeTopByPriority(catSrc, PERF.maxCatalystMarkersPerField);
       for (let j = 0; j < catShow.length; j++) {
         const e = catShow[j];
-        const isCritical = e.nodeType === 'critical';
         L.circleMarker([e.midLat, e.midLon], {
           renderer: vectorRenderer,
-          radius: isCritical ? 3.5 : 4.5,
-          fillColor: isCritical ? '#e91e8c' : '#ff4dad',
+          radius: 4.5,
+          fillColor: '#ff4dad',
           color: color,
           weight: 1,
-          fillOpacity: isCritical ? 0.48 : 0.45,
+          fillOpacity: 0.45,
           opacity: 0.92,
           interactive: false
         }).addTo(map);
@@ -1197,7 +1187,11 @@ function hideMapLoading() {
   if (mapLoadingEl) mapLoadingEl.classList.add('done');
 }
 
-loadEdges().then((edges) => {
+loadEdges().then(async (edgesAll) => {
+  let edges = edgesAll;
+  if (typeof filterEdgeRecordsToDaxujiahuiStudy === 'function') {
+    edges = await filterEdgeRecordsToDaxujiahuiStudy(edgesAll);
+  }
   setTimeout(() => {
     let classified, fields;
     try {

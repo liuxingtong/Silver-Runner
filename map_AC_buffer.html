@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="ac-dom-aggregate.js"></script>
 <script src="xujiahui-osm-boundary.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
@@ -213,12 +214,12 @@
 <div class="panel-header">
   <div class="tag">CSVI Dimension 03 · Spatial Distribution</div>
   <h1><span>AC</span> · 缓冲维度 · 街段级空间分布</h1>
-  <div class="sub">数据：<code>cld_priority.csv</code> · 玫红圆点</div>
+  <div class="sub">数据：<code>cld_priority.csv</code> · 玫红圆点 · 若表含 <code>AC_*_dom</code> 四列则 <strong>AC_phys 图层</strong>用四列<strong>算术平均</strong>替代单列</div>
 </div>
 
 <div class="layer-toggle">
   <div class="lt-title">显示图层 Layer</div>
-  <button class="lt-btn active" id="btn-phys" onclick="switchLayer('phys')">AC_phys · 物理缓冲</button>
+  <button class="lt-btn active" id="btn-phys" onclick="switchLayer('phys')">AC_phys · 物理/五主导均值</button>
   <button class="lt-btn" id="btn-social" onclick="switchLayer('social')">AC_social · 社会缓冲</button>
   <button class="lt-btn" id="btn-product" onclick="switchLayer('product')">AC_total · 综合缓冲</button>
   <button type="button" class="lt-btn active lt-boundary" id="btn-boundary" onclick="toggleBoundaryLayer()" style="margin-top:6px;margin-bottom:0;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:9px">大徐家汇边界 · OSM</button>
@@ -231,7 +232,8 @@
     <span>低</span><span>中</span><span>高</span>
   </div>
   <div class="formula">
-    <em>AC</em> = <em>AC_phys</em> × <em>AC_social</em><br>
+    <em>AC_phys 图层</em>：五主导列（含 <code>AC_soc_cul_dom</code>）齐全时为五列<strong>均值</strong>；仅四列齐全时为四列均值；否则为 <code>csvi_AC_phys</code>。<br>
+    <em>AC</em> = <em>AC_phys(图层值)</em> × <em>AC_social</em><br>
     圆点 <em>#DA4BA3</em>，单点较透；<strong>重叠越密越实</strong>
   </div>
 </div>
@@ -336,17 +338,21 @@ function stripBomKeys(d) {
 
 function parseRowAC(d) {
   d = stripBomKeys(d);
-  const acPhys = +d.csvi_AC_phys;
   const acSocial = +d.csvi_AC_social;
+  const acPhysAgg = window.ACDomAggregate.effectiveAcPhys(d);
+  const acPhysCsv = +d.csvi_AC_phys;
+  const usesDom = window.ACDomAggregate.resourceDomType(d) != null;
   return {
     u: d.u,
     v: d.v,
     lon: +d.lon,
     lat: +d.lat,
     length: +d.length,
-    ac_phys: acPhys,
+    ac_phys: acPhysAgg,
+    ac_phys_csv: acPhysCsv,
+    usesDomAggregate: usesDom,
     ac_social: acSocial,
-    ac_total: acPhys * acSocial,
+    ac_total: acPhysAgg * acSocial,
     N07: +d.N07,
     N08: +d.N08,
     N15: +d.N15,
@@ -360,6 +366,8 @@ let maxSocial = 0.4;
 let maxAcProduct = 0.05;
 const polylines = [];
 let currentAcLayer = 'phys';
+/** 当前 CSV 是否用主导列均值作为 AC_phys 图层 */
+let edgesUseDomAggregate = false;
 
 function normAC(edge) {
   let v;
@@ -420,7 +428,9 @@ function switchLayer(layer) {
 
   switch (layer) {
     case 'phys':
-      titleEl.textContent = 'csvi_AC_phys · 玫红圆点';
+      titleEl.textContent = edgesUseDomAggregate
+        ? 'AC_phys · 主导列均值 · 玫红圆点'
+        : 'csvi_AC_phys · 玫红圆点';
       drawGradient(maxPhys, `<span>0</span><span>${midPhys}</span><span>${maxPhys.toFixed(2)}</span>`);
       break;
     case 'social':
@@ -450,6 +460,8 @@ function renderMapFromRaw(raw) {
   polylines.length = 0;
   csvLoadBanner.style.display = 'none';
 
+  edgesUseDomAggregate = edges.some((x) => x.usesDomAggregate);
+
   const bounds = L.latLngBounds(ll);
   if (bounds.isValid()) map.fitBounds(bounds.pad(0.02));
 
@@ -469,7 +481,8 @@ function renderMapFromRaw(raw) {
     const pl = L.circle([edge.lat, edge.lon], acMarkerStyle(edge)).addTo(map);
 
     pl.bindTooltip(`
-    <div class="tt-head">AC_phys=${edge.ac_phys.toFixed(4)} | AC_social=${edge.ac_social.toFixed(4)}</div>
+    <div class="tt-head">AC_phys(图层)=${edge.ac_phys.toFixed(4)} | AC_social=${edge.ac_social.toFixed(4)}</div>
+    ${edge.usesDomAggregate ? `<div class="tt-r"><span>csvi_AC_phys 表列</span><b>${(Number.isFinite(edge.ac_phys_csv) ? edge.ac_phys_csv : 0).toFixed(4)}</b></div>` : ''}
     <div class="tt-r"><span>AC_total</span><b>${edge.ac_total.toFixed(6)}</b></div>
     <div class="tt-r"><span>N07</span><b>${edge.N07.toFixed(3)}</b></div>
     <div class="tt-r"><span>N08</span><b>${edge.N08.toFixed(3)}</b></div>

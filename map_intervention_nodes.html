@@ -3,14 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>干预节点分类 · Intervention Node Typology</title>
+<title>潜力与资源节点 · 街段地图</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="ac-dom-aggregate.js"></script>
 <script src="xujiahui-osm-boundary.js"></script>
-<script src="cluster-field-circles.js"></script>
-<script src="catalyst-seam-clusters.js"></script>
-<script src="corridor-bottleneck-routing.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
@@ -75,9 +73,8 @@
     font-size:10px;letter-spacing:2px;text-transform:uppercase;
     margin-bottom:10px;font-weight:500;
   }
-  .lg-title.activated,
-  .lg-title.bottleneck,
-  .lg-title.critical{color:var(--magenta-soft)}
+  .lg-title.activated{color:var(--magenta-soft)}
+  .lg-title.resource{color:#5ce1e6}
 
   .lg-item{
     display:flex;align-items:flex-start;gap:10px;
@@ -136,12 +133,10 @@
   .lc-check.on::after{
     content:'✓';font-size:10px;color:currentColor;
   }
-  .lc-row.act .lc-check.on,
-  .lc-row.bot .lc-check.on,
-  .lc-row.cri .lc-check.on{border-color:var(--magenta)}
-  .lc-row.act .lc-check.on::after,
-  .lc-row.bot .lc-check.on::after,
-  .lc-row.cri .lc-check.on::after{color:var(--magenta-bright)}
+  .lc-row.act .lc-check.on{border-color:var(--magenta)}
+  .lc-row.act .lc-check.on::after{color:var(--magenta-bright)}
+  .lc-row.res .lc-check.on{border-color:#5ce1e6}
+  .lc-row.res .lc-check.on::after{color:#5ce1e6}
 
   .lc-row .lc-label{flex:1}
   .lc-row .lc-count{
@@ -172,9 +167,8 @@
   .st-cell .st-val{
     font-size:18px;font-weight:700;letter-spacing:-0.5px;
   }
-  .st-cell .st-val.c-a,
-  .st-cell .st-val.c-b,
-  .st-cell .st-val.c-c{color:var(--magenta-bright)}
+  .st-cell .st-val.c-a{color:var(--magenta-bright)}
+  .st-cell .st-val.c-res{color:#5ce1e6}
 
   /* --- Formula --- */
   .formula-panel{
@@ -193,9 +187,8 @@
   }
   .fp-row{font-size:11px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:4px}
   .fp-row em{font-style:normal;font-weight:600}
-  .fp-row .c-a,
-  .fp-row .c-b,
-  .fp-row .c-c{color:var(--magenta-bright)}
+  .fp-row .c-a{color:var(--magenta-bright)}
+  .fp-row .c-res{color:#5ce1e6}
 
   /* --- Tooltips --- */
   .node-tooltip{
@@ -213,9 +206,8 @@
     font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
     font-weight:600;margin-bottom:4px;
   }
-  .node-tooltip .tt-type.t-act,
-  .node-tooltip .tt-type.t-bot,
-  .node-tooltip .tt-type.t-cri{color:var(--magenta-bright)}
+  .node-tooltip .tt-type.t-act{color:var(--magenta-bright)}
+  .node-tooltip .tt-type.t-res{color:#5ce1e6}
   .node-tooltip .tt-name{
     font-size:14px;font-weight:700;margin-bottom:8px;color:#f0f0f0;
   }
@@ -250,69 +242,37 @@
 <div id="map"></div>
 
 <div class="panel-header">
-  <div class="tag">Intervention Node Typology · 干预节点分类</div>
+  <div class="tag">Potential & Resource Nodes · 潜力与资源</div>
   <h1>
-    <span class="hl-a">激活</span> ·
-    <span class="hl-b">瓶颈</span> ·
-    <span class="hl-c">临界</span> — 三类干预节点
+    <span class="hl-a">潜力节点</span>（<span class="hl-b">激活</span>三亚型 A₁/A₂/A₃；<em style="font-style:normal;opacity:0.85">界内按 priority 前 50% 标点</em>）
+    · <span class="hl-a" style="color:#5ce1e6">资源节点</span>（<em style="font-style:normal;opacity:0.85">主导类 AC 各取前 10%</em>）
   </h1>
-  <div class="sub">底图突出 CSVI 较高路段；<strong>激活 / 临界 / 瓶颈</strong>三类节点为<strong>全量</strong>标注。</div>
+  <div class="sub">大徐家汇边界内街段；潜力标点取前 <strong>50%</strong>；资源按医疗/科技/商业/体育/文化<strong>五类各前 10%</strong>。无廊道层。</div>
 </div>
 
 <div class="legend-panel">
-  <!-- Activated -->
   <div class="lg-section">
-    <div class="lg-title activated">激活节点 ACTIVATED</div>
+    <div class="lg-title" style="color:rgba(255,255,255,0.45);margin-bottom:8px">潜力节点 POTENTIAL</div>
+    <div class="lg-title activated">激活 ACTIVATED</div>
     <div class="lg-item">
       <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,2 18,17 2,17" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
-      <div class="lg-label">
-        A₁ · 老年人主导型
-        <span class="lg-sub">老年停留偏多、工作人群偏少</span>
-      </div>
+      <div class="lg-label">A₁ · 老年人主导型</div>
     </div>
     <div class="lg-item">
       <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,18 18,3 2,3" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
-      <div class="lg-label">
-        A₂ · 工作人口主导型
-        <span class="lg-sub">工作人群偏多、老年偏少</span>
-      </div>
+      <div class="lg-label">A₂ · 工作人口主导型</div>
     </div>
     <div class="lg-item">
       <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,1 12.5,7 19,7 13.5,11.5 15.5,18 10,14 4.5,18 6.5,11.5 1,7 7.5,7" fill="#e91e8c" fill-opacity="0.7" stroke="#e91e8c" stroke-width="1.5"/></svg></div>
-      <div class="lg-label">
-        A₃ · 双向停留型
-        <span class="lg-sub">两侧停留都高</span>
-      </div>
-    </div>
-    <div class="lg-item" style="margin-top:2px">
-      <div class="lg-symbol" style="width:20px"></div>
-      <div class="lg-label" style="font-size:10px;color:rgba(255,255,255,0.5)">激活边段：<strong>全量</strong></div>
+      <div class="lg-label">A₃ · 双向停留型</div>
     </div>
   </div>
   <hr class="lg-divider">
-  <!-- Bottleneck -->
   <div class="lg-section">
-    <div class="lg-title bottleneck">瓶颈节点 BOTTLENECK</div>
+    <div class="lg-title resource">资源节点 RESOURCE</div>
     <div class="lg-item">
-      <div class="lg-symbol"><svg width="20" height="20"><rect x="3" y="3" width="14" height="14" rx="2" fill="none" stroke="#e91e8c" stroke-width="2"/></svg></div>
-      <div class="lg-label">
-        廊道边集上 ∩ 低 AC_phys ∩ <strong>b(e)≥τ</strong>（边级；与簇间廊道几何一致）
-        <span class="lg-sub">b=0.45·nPri+0.35·接缝+0.2·脆弱AC；本页不单独绘廊道折线</span>
-        <span class="lg-sub" style="margin-top:4px;color:rgba(255,255,255,0.5)">瓶颈边段：<strong>全量</strong></span>
-      </div>
-    </div>
-  </div>
-  <hr class="lg-divider">
-  <!-- Critical -->
-  <div class="lg-section">
-    <div class="lg-title critical">临界节点 CRITICAL</div>
-    <div class="lg-item">
-      <div class="lg-symbol"><svg width="20" height="20"><circle cx="10" cy="10" r="6.5" fill="rgba(233,30,140,0.22)" stroke="#e91e8c" stroke-width="2"/></svg></div>
-      <div class="lg-label">
-        象限临界
-        <span class="lg-sub">接触维度偏高、工作停留高而老年偏少，单点撬动潜力大</span>
-        <span class="lg-sub" style="margin-top:4px;color:rgba(255,255,255,0.5)">临界边段：<strong>全量</strong></span>
-      </div>
+      <div class="lg-symbol"><svg width="20" height="20"><polygon points="10,1 18,6 18,14 10,19 2,14 2,6" fill="none" stroke="#5ce1e6" stroke-width="1.8"/></svg></div>
+      <div class="lg-label">五主导列取类型 · 界内按类各前 10% 标点 · 非潜力</div>
     </div>
   </div>
   <hr class="lg-divider">
@@ -320,9 +280,7 @@
     <div class="lg-title" style="color:var(--magenta-dim)">底图 BASE NETWORK</div>
     <div class="lg-item">
       <div class="lg-symbol"><svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="rgba(233,30,140,0.45)" stroke-width="2"/></svg></div>
-      <div class="lg-label" style="color:rgba(255,255,255,0.35)">
-        全部街段（按CSVI着色）
-      </div>
+      <div class="lg-label" style="color:rgba(255,255,255,0.35)">边界内街段 · CSVI 着色 · 全量</div>
     </div>
   </div>
 </div>
@@ -332,18 +290,13 @@
   <div class="lc-title">图层控制 Layers</div>
   <div class="lc-row act" onclick="toggleLayer('activated')">
     <div class="lc-check on" id="chk-activated"></div>
-    <span class="lc-label">激活节点</span>
+    <span class="lc-label">潜力 · 激活（前 50%）</span>
     <span class="lc-count" id="cnt-activated">—</span>
   </div>
-  <div class="lc-row bot" onclick="toggleLayer('bottleneck')">
-    <div class="lc-check on" id="chk-bottleneck"></div>
-    <span class="lc-label">瓶颈节点</span>
-    <span class="lc-count" id="cnt-bottleneck">—</span>
-  </div>
-  <div class="lc-row cri" onclick="toggleLayer('critical')">
-    <div class="lc-check on" id="chk-critical"></div>
-    <span class="lc-label">临界节点</span>
-    <span class="lc-count" id="cnt-critical">—</span>
+  <div class="lc-row res" onclick="toggleLayer('resource')">
+    <div class="lc-check on" id="chk-resource"></div>
+    <span class="lc-label">资源节点（五类各 10%）</span>
+    <span class="lc-count" id="cnt-resource">—</span>
   </div>
   <div class="lc-row" onclick="toggleLayer('network')" style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px">
     <div class="lc-check on" id="chk-network"></div>
@@ -364,33 +317,22 @@
       <div class="st-val c-a" id="st-act">—</div>
     </div>
     <div class="st-cell">
-      <div class="st-label">Bottleneck</div>
-      <div class="st-val c-b" id="st-bot">—</div>
+      <div class="st-label">Resource AC↑</div>
+      <div class="st-val c-res" id="st-res">—</div>
     </div>
-    <div class="st-cell">
-      <div class="st-label">Critical</div>
-      <div class="st-val c-c" id="st-cri">—</div>
-    </div>
-    <div class="st-cell">
-      <div class="st-label">Edges on map</div>
+    <div class="st-cell" style="grid-column:1/-1">
+      <div class="st-label">边界内路网 / 全表</div>
       <div class="st-val" style="color:rgba(255,255,255,0.4)" id="st-total">—</div>
     </div>
   </div>
   <div id="st-filter-note" style="margin-top:10px;font-size:9px;line-height:1.45;color:rgba(255,255,255,0.28)"></div>
 </div>
 
-<!-- Formula -->
+<!-- 要点（精简） -->
 <div class="formula-panel">
-  <div class="fp-title">分类逻辑 Classification</div>
-  <div class="fp-row"><em class="c-a">W_elder</em> = E × (AC_phys+1)</div>
-  <div class="fp-row"><em class="c-a">W_work</em> = N_YP × Q（Q 同列 <strong>N08</strong>，与停留意愿矩阵一致）</div>
-  <div class="fp-row" style="margin-top:6px"><em class="c-b">瓶颈</em>：廊道边集 ∩ AC_phys ≤ 中位 ∩ <strong>b(e)≥τ</strong>（无廊道时回退接缝∩同条件）</div>
-  <div class="fp-row">b=0.45·nPri+0.35·接缝+0.2·脆弱AC；廊道=簇 medoid 间 w=0.55·l̂+0.45·(1−b) 最短路（本页不绘线）</div>
-  <div class="fp-row" style="margin-top:6px"><em class="c-c">临界</em>：CSVI中等</div>
-  <div class="fp-row">S_contact/S &gt; 0.6（放宽 10%）∧ W_work高</div>
-  <div class="fp-row" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:10px;color:rgba(255,255,255,0.25)">
-    W 两轴：先算研究区内<strong>经验分位</strong> P∈[0,1]，再对 P 做 Jenks 三档（「高档」= 该轴相对靠前，两轴可比）
-  </div>
+  <div class="fp-title">要点</div>
+  <div class="fp-row" style="color:rgba(255,255,255,0.55)">潜力：CSVI 高 + W 轴至少一轴高 → A₁/A₂/A₃；界内按 priority 取前 50% 标点</div>
+  <div class="fp-row" style="color:rgba(255,255,255,0.55)">资源：五主导列可判类型且非潜力；界内按主导类各取前 10% 标点</div>
 </div>
 
 <script>
@@ -566,7 +508,7 @@ function estimateNodePositions(rawEdges) {
 }
 
 function buildEdgesFromCsvRows(rows) {
-  const raw = rows.map(r => ({
+  const raw = rows.map((r) => ({
     u: String(r.u),
     v: String(r.v),
     lon: +r.lon,
@@ -576,28 +518,48 @@ function buildEdgesFromCsvRows(rows) {
     csvi_S_contact: +r.csvi_S_contact,
     csvi_AC_phys: +r.csvi_AC_phys,
     csvi_AC_social: +r.csvi_AC_social,
+    AC_med_dom: r.AC_med_dom,
+    AC_tech_dom: r.AC_tech_dom,
+    AC_mkt_dom: r.AC_mkt_dom,
+    AC_sport_dom: r.AC_sport_dom,
+    AC_soc_cul_dom: r.AC_soc_cul_dom,
     N_YP: +r.N_YP,
     N08: +r.N08,
     priority: +r.priority
   }));
   const pos = estimateNodePositions(raw);
-  return raw.map(r => {
-    const from = pos[r.u], to = pos[r.v];
+  const agg = window.ACDomAggregate;
+  return raw.map((r) => {
+    const from = pos[r.u],
+      to = pos[r.v];
     const midLon = (from.lon + to.lon) / 2;
     const midLat = (from.lat + to.lat) / 2;
     const sTotal = r.csvi_S_env + r.csvi_S_contact;
+    const acPhysEff = agg.effectiveAcPhys(r);
+    const resourceDom = agg.resourceDomType(r);
     return {
-      u: r.u, v: r.v,
-      from, to, midLon, midLat,
+      u: r.u,
+      v: r.v,
+      from,
+      to,
+      midLon,
+      midLat,
       csvi_E: r.csvi_E,
       csvi_S_env: r.csvi_S_env,
       csvi_S_contact: r.csvi_S_contact,
       csvi_AC_phys: r.csvi_AC_phys,
+      AC_med_dom: r.AC_med_dom,
+      AC_tech_dom: r.AC_tech_dom,
+      AC_mkt_dom: r.AC_mkt_dom,
+      AC_sport_dom: r.AC_sport_dom,
+      AC_soc_cul_dom: r.AC_soc_cul_dom,
+      acPhysEff,
+      resourceDom,
       csvi_AC_social: r.csvi_AC_social,
       N_YP: r.N_YP,
       N08: r.N08,
       priority: r.priority,
-      W_elder: r.csvi_E * (r.csvi_AC_phys + 1),
+      W_elder: r.csvi_E * (acPhysEff + 1),
       W_work: Math.max(0, (+r.N_YP || 0) * (+r.N08 || 0)),
       S_contact_ratio: sTotal > 0 ? r.csvi_S_contact / sTotal : 0
     };
@@ -662,6 +624,12 @@ function simulateEdges() {
     const inCorridor = corridorDist < 0.003 && e.midLon > centerLon-0.01 && e.midLon < centerLon+0.01;
     e.csvi_AC_phys = Math.max(0.001, Math.min(0.3,
       gaussRand(0.04 + parkProx*0.15 - (inCorridor?0.03:0), 0.025)));
+    const b = e.csvi_AC_phys;
+    e.AC_med_dom = Math.max(0.001, Math.min(0.35, b * gaussRand(1, 0.12)));
+    e.AC_tech_dom = Math.max(0.001, Math.min(0.35, b * gaussRand(1, 0.12)));
+    e.AC_mkt_dom = Math.max(0.001, Math.min(0.35, b * gaussRand(1, 0.12)));
+    e.AC_sport_dom = Math.max(0.001, Math.min(0.35, b * gaussRand(1, 0.12)));
+    e.AC_soc_cul_dom = Math.max(0.001, Math.min(0.35, b * gaussRand(1, 0.12)));
     e.csvi_AC_social = Math.max(0, Math.min(0.4, gaussRand(0.06 + proxCenter*0.15, 0.04)));
 
     e.priority = Math.max(0, Math.min(1,
@@ -669,7 +637,9 @@ function simulateEdges() {
     ));
     e.priority = Math.min(1, e.priority / 30);
 
-    e.W_elder = e.csvi_E * (e.csvi_AC_phys + 1);
+    e.acPhysEff = window.ACDomAggregate.effectiveAcPhys(e);
+    e.resourceDom = window.ACDomAggregate.resourceDomType(e);
+    e.W_elder = e.csvi_E * (e.acPhysEff + 1);
     e.W_work = Math.max(0, e.N_YP * e.N08);
 
     const sTotal = e.csvi_S_env + e.csvi_S_contact;
@@ -693,7 +663,7 @@ async function loadEdges() {
 }
 
 let layerGroups = {};
-let layerVisible = { activated: true, bottleneck: true, critical: true, network: true, boundary: true };
+let layerVisible = { activated: true, resource: true, network: true, boundary: true };
 
 function toggleLayer(name) {
   layerVisible[name] = !layerVisible[name];
@@ -707,7 +677,7 @@ function toggleLayer(name) {
   }
 }
 
-function runPipeline(edges) {
+async function runPipeline(edges) {
 // ============================================================
 //  JENKS CLASSIFICATION
 // ============================================================
@@ -721,13 +691,8 @@ const csviBreaks = getClassificationBreaks(priorityValues, 3);
 const wElderBreaks = getClassificationBreaks(pElderValues, 3);
 const wWorkBreaks = getClassificationBreaks(pWorkValues, 3);
 
-// AC_phys 下中位：较低约 50% = csvi_AC_phys ≤ 此值
-const acPhysSorted = edges.map(e => e.csvi_AC_phys).sort((a,b)=>a-b);
-const nAc = acPhysSorted.length;
-const acPhys50 = nAc ? acPhysSorted[Math.floor((nAc - 1) / 2)] : 0;
-
-edges.forEach(e => {
-  e.csviClass = classifyJenks(e.priority, csviBreaks);     // 0=low,1=mid,2=high
+edges.forEach((e) => {
+  e.csviClass = classifyJenks(e.priority, csviBreaks); // 0=low,1=mid,2=high
   e.wElderClass = classifyJenks(e.p_elder, wElderBreaks);
   e.wWorkClass = classifyJenks(e.p_work, wWorkBreaks);
 });
@@ -736,10 +701,8 @@ edges.forEach(e => {
 //  NODE CLASSIFICATION
 // ============================================================
 const activatedEdges = [];
-const bottleneckEdges = [];
-const criticalEdges = [];
 
-edges.forEach(e => {
+edges.forEach((e) => {
   // --- ACTIVATED: CSVI high AND at least one W high ---
   if (e.csviClass === 2 && (e.wElderClass === 2 || e.wWorkClass === 2)) {
     if (e.wElderClass === 2 && e.wWorkClass <= 1) {
@@ -753,58 +716,22 @@ edges.forEach(e => {
     return;
   }
 
-  // --- CRITICAL: CSVI medium, S_contact dominant, W_work high, W_elder low ---
-  if (e.csviClass === 1 && e.S_contact_ratio > 0.6 && e.wWorkClass === 2 && e.wElderClass <= 1) {
-    e.nodeType = 'critical';
-    criticalEdges.push(e);
-    return;
-  }
-
   e.nodeType = null;
 });
 
-// --- BOTTLENECK: AC_phys 较低 50% ∧ b≥τ；有簇间廊道时取廊道边集，否则回退接缝（见 corridor-bottleneck-routing.js）---
-function vertPosFromActivatedEdges(activatedEdgeList) {
-  const m = new Map();
-  for (let i = 0; i < activatedEdgeList.length; i++) {
-    const ev = activatedEdgeList[i];
-    m.set(ev.u, ev.from);
-    m.set(ev.v, ev.to);
-  }
-  return m;
-}
-
-const vertPosAct = vertPosFromActivatedEdges(activatedEdges);
-const aligned = CatalystSeamClusters.collectAlignedSeamEdgesWithDb(
-  edges,
-  activatedEdges,
-  criticalEdges,
-  vertPosAct
+// --- 仅保留边段中点落在大徐家汇四街道并集内的节点（与玫红边界一致）---
+const studyGeom = typeof getDaxujiahuiBoundaryGeometry === 'function'
+  ? await getDaxujiahuiBoundaryGeometry()
+  : null;
+const edgeMidInStudy = (e) =>
+  typeof pointInDaxujiahuiGeometry === 'function'
+    ? pointInDaxujiahuiGeometry(e.midLon, e.midLat, studyGeom)
+    : true;
+const activatedInStudy = activatedEdges.filter(edgeMidInStudy);
+/** 资源标点候选：未判潜力、主导列齐全可判类型、中点在研究区内 */
+const resourceCandidatesInStudy = edges.filter(
+  (e) => e.nodeType == null && e.resourceDom && edgeMidInStudy(e)
 );
-const connectorSeamSet = aligned.seam;
-
-/** 与场域页 10 ha 总量一致，供 DBSCAN 簇分叙事面积 */
-const MAP_FIELD_TOTAL_AREA_M2 = 100000;
-const clusterCirclesByClusterLabel =
-  typeof ClusterFieldCircles !== 'undefined'
-    ? ClusterFieldCircles.dbscanCirclesForCorridor(aligned.db, MAP_FIELD_TOTAL_AREA_M2)
-    : null;
-
-const routePack = CorridorBottleneck.compute({
-  edges,
-  activatedEdges,
-  criticalEdges,
-  vertPos: vertPosAct,
-  connectorSeamSet,
-  acPhys50,
-  catalystDb: aligned.db,
-  clusterCirclesByClusterLabel
-});
-for (let ri = 0; ri < routePack.bottleneckEdges.length; ri++) {
-  const e = routePack.bottleneckEdges[ri];
-  e.nodeType = 'bottleneck';
-  bottleneckEdges.push(e);
-}
 
 // ============================================================
 //  RENDER
@@ -818,18 +745,33 @@ function csviColorFromT(t) {
   return `rgba(${r},${g},${b},${0.15 + t * 0.28})`;
 }
 
-/** 3.2 万条边若各建一个 L.polyline，Leaflet 事件与图层管理开销极大；按 priority 分桶合并为少量 Multi-Polyline */
+/** 边界内边段按 priority 分桶合并为少量 polyline，减轻 Canvas 绘制批次 */
 const NETWORK_BUCKETS = 22;
-/** 地图上仅绘制 priority 最高的这一比例边段（性能） */
-const MAP_DISPLAY_TOP_FRAC = 0.01;
-function minPriorityForTopFraction(allEdges, frac) {
-  const n = allEdges.length;
-  if (!n) return Infinity;
-  const arr = new Float64Array(n);
-  for (let i = 0; i < n; i++) arr[i] = allEdges[i].priority;
-  arr.sort();
-  const take = Math.max(1, Math.ceil(n * frac));
-  return arr[n - take];
+/** 潜力节点：界内激活边段按 priority 取前若干比例 */
+const NODE_MARKER_POTENTIAL_TOP_FRAC = 0.5;
+/** 资源节点：五主导类各自界内按该主导列取前若干比例 */
+const NODE_MARKER_RESOURCE_TOP_FRAC = 0.1;
+
+function takeTopFractionByMetric(arr, metricFn, frac) {
+  const n = arr.length;
+  if (!n) return [];
+  const k = Math.max(1, Math.ceil(n * frac));
+  return [...arr].sort((a, b) => metricFn(b) - metricFn(a)).slice(0, k);
+}
+
+/** 医疗/科技/商业/体育/文化 各取 top frac（按各自主导列 resourceDom.max 排序） */
+function takeTopFractionPerResourceDom(arr, frac) {
+  const keys = (window.ACDomAggregate && window.ACDomAggregate.DOM_KEYS) || [
+    'AC_med_dom', 'AC_tech_dom', 'AC_mkt_dom', 'AC_sport_dom', 'AC_soc_cul_dom'
+  ];
+  const out = [];
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const sub = arr.filter((e) => e.resourceDom && e.resourceDom.key === key);
+    const top = takeTopFractionByMetric(sub, (e) => e.resourceDom.max, frac);
+    for (let j = 0; j < top.length; j++) out.push(top[j]);
+  }
+  return out;
 }
 
 function priorityTo01(edgeList) {
@@ -843,31 +785,25 @@ function priorityTo01(edgeList) {
   return (p) => (p - lo) / span;
 }
 
-const mapPrioMin = minPriorityForTopFraction(edges, MAP_DISPLAY_TOP_FRAC);
-function isMapVisible(e) {
-  return e.priority >= mapPrioMin;
-}
-
 // Layer groups（路网与其它矢量共用 Canvas renderer，减轻 SVG 节点数）
 const vectorRenderer = L.canvas({ padding: 0.5 });
 layerGroups = {
   network: L.layerGroup().addTo(map),
   activated: L.layerGroup().addTo(map),
-  bottleneck: L.layerGroup().addTo(map),
-  critical: L.layerGroup().addTo(map),
+  resource: L.layerGroup().addTo(map),
   boundary: L.layerGroup().addTo(map),
 };
 addXujiahuiBoundaryToGroup(layerGroups.boundary);
 
-const visibleForColor = [];
+const networkEdgesInStudy = [];
 for (let i = 0; i < edges.length; i++) {
-  if (isMapVisible(edges[i])) visibleForColor.push(edges[i]);
+  if (edgeMidInStudy(edges[i])) networkEdgesInStudy.push(edges[i]);
 }
-const p01 = priorityTo01(visibleForColor.length ? visibleForColor : edges);
+const colorBasis = networkEdgesInStudy.length ? networkEdgesInStudy : edges;
+const p01 = priorityTo01(colorBasis);
 const bucketSegs = Array.from({ length: NETWORK_BUCKETS }, () => []);
-for (let i = 0; i < edges.length; i++) {
-  const e = edges[i];
-  if (!isMapVisible(e)) continue;
+for (let i = 0; i < networkEdgesInStudy.length; i++) {
+  const e = networkEdgesInStudy[i];
   const t = Math.max(0, Math.min(1, p01(e.priority)));
   const bi = Math.min(NETWORK_BUCKETS - 1, Math.floor(t * NETWORK_BUCKETS));
   bucketSegs[bi].push([[e.from.lat, e.from.lon], [e.to.lat, e.to.lon]]);
@@ -899,16 +835,6 @@ function starIcon(color, size=24) {
   });
 }
 
-function squareIcon(color, size=18) {
-  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="2" width="${size-4}" height="${size-4}" rx="2"
-      fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="2" />
-  </svg>`;
-  return L.divIcon({
-    html: svg, className: '', iconSize: [size, size], iconAnchor: [size/2, size/2]
-  });
-}
-
 /** 正三角 ▲（顶点朝上） */
 function triangleUpIcon(color, size=22) {
   const c = size/2;
@@ -931,13 +857,18 @@ function triangleDownIcon(color, size=22) {
     html: svg, className: '', iconSize: [size, size], iconAnchor: [c, c]
   });
 }
-/** 圆形（象限临界点） */
-function circleNodeIcon(color, size=20) {
+/** 正六边形 · 资源节点（认知资产 / 高 AC） */
+function hexNodeIcon(color, size = 20) {
   const c = size / 2;
   const r = c - 2;
+  const pts = [];
+  for (let k = 0; k < 6; k++) {
+    const a = (Math.PI / 6 + (k * Math.PI) / 3) - Math.PI / 2;
+    pts.push(`${c + r * Math.cos(a)},${c + r * Math.sin(a)}`);
+  }
+  const d = pts.join(' ');
   const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="${c}" cy="${c}" r="${r}"
-      fill="${color}" fill-opacity="0.28" stroke="${color}" stroke-width="2" />
+    <polygon points="${d}" fill="${color}" fill-opacity="0.22" stroke="${color}" stroke-width="2" />
   </svg>`;
   return L.divIcon({
     html: svg, className: '', iconSize: [size, size], iconAnchor: [c, c]
@@ -945,52 +876,50 @@ function circleNodeIcon(color, size=20) {
 }
 
 const MAG_NODE = '#e91e8c';
+const RES_NODE = '#5ce1e6';
 const NODE_ICONS = {
-  act_elder:  triangleUpIcon(MAG_NODE, 20),
-  act_work:   triangleDownIcon(MAG_NODE, 20),
-  act_both:   starIcon(MAG_NODE, 26),
-  bottleneck: squareIcon(MAG_NODE, 16),
-  critical:   circleNodeIcon(MAG_NODE, 20),
+  act_elder: triangleUpIcon(MAG_NODE, 20),
+  act_work: triangleDownIcon(MAG_NODE, 20),
+  act_both: starIcon(MAG_NODE, 26),
+  resource: hexNodeIcon(RES_NODE, 22),
 };
 
 const nodeStyles = {
-  act_elder:  { typeCN: '激活·老年人主导型', typeEN: 'Activated A₁', typeClass: 't-act',
-                note: 'W_elder高 W_work低 → 认知恢复线主导' },
-  act_work:   { typeCN: '激活·工作人口主导型', typeEN: 'Activated A₂', typeClass: 't-act',
-                note: 'W_work高 W_elder低 → 人机共生线主导' },
-  act_both:   { typeCN: '激活·双向停留型', typeEN: 'Activated A₃', typeClass: 't-act',
-                note: '两者都高 → 稀缺，双线共同作用' },
-  bottleneck: { typeCN: '瓶颈', typeEN: 'Bottleneck', typeClass: 't-bot',
-                note: '廊道边∩低AC_phys∩b(e)≥τ（无廊道时接缝∩同条件）；b 同上' },
-  critical:   { typeCN: '临界', typeEN: 'Critical', typeClass: 't-cri',
-                note: 'CSVI中等，S_contact主导，单干预撬动' },
+  act_elder: { typeCN: '潜力 · 激活·老年人主导型', typeEN: 'Potential A₁', typeClass: 't-act',
+    note: 'W_elder高 W_work低 → 认知恢复线主导' },
+  act_work: { typeCN: '潜力 · 激活·工作人口主导型', typeEN: 'Potential A₂', typeClass: 't-act',
+    note: 'W_work高 W_elder低 → 人机共生线主导' },
+  act_both: { typeCN: '潜力 · 激活·双向停留型', typeEN: 'Potential A₃', typeClass: 't-act',
+    note: '两者都高 → 稀缺，双线共同作用' },
+  resource: { typeCN: '资源节点', typeEN: 'Resource', typeClass: 't-res',
+    note: '主导类列界内前 10%；子类型见 tooltip' },
 };
 
 function makeTooltip(e) {
   const s = nodeStyles[e.nodeType];
+  if (!s) return '';
+  const dom = e.resourceDom;
+  if (e.nodeType === 'resource') {
+    const domVal = dom && Number.isFinite(dom.max) ? dom.max : 0;
+    const domLab = dom ? dom.label : '—';
+    return `
+    <div class="tt-type ${s.typeClass}">${s.typeEN}</div>
+    <div class="tt-name">${s.typeCN}${dom ? ' · ' + dom.label : ''}</div>
+    <div class="tt-r"><span>AC（${domLab}）</span><b>${domVal.toFixed(4)}</b></div>
+    <div class="tt-r"><span>CSVI</span><b>${e.priority.toFixed(4)}</b></div>`;
+  }
   return `
     <div class="tt-type ${s.typeClass}">${s.typeEN}</div>
     <div class="tt-name">${s.typeCN}</div>
-    <div class="tt-r"><span>CSVI (priority)</span><b>${e.priority.toFixed(4)}</b></div>
-    <div class="tt-r"><span>W_elder (E×(AC_phys+1))</span><b>${e.W_elder.toFixed(4)}</b></div>
-    <div class="tt-r"><span>W_work (N_YP×Q)</span><b>${e.W_work.toFixed(4)}</b></div>
-    <div class="tt-r"><span>P_work（分位）</span><b>${(e.p_work != null ? e.p_work : 0).toFixed(3)}</b></div>
-    <div class="tt-r"><span>P_elder（分位）</span><b>${(e.p_elder != null ? e.p_elder : 0).toFixed(3)}</b></div>
-    <div class="tt-r"><span>Q（N08）</span><b>${(e.N08 != null && Number.isFinite(e.N08) ? e.N08 : 0).toFixed(4)}</b></div>
-    <hr class="tt-sep">
-    <div class="tt-r"><span>csvi_E</span><b>${e.csvi_E.toFixed(3)}</b></div>
-    <div class="tt-r"><span>csvi_AC_phys</span><b>${e.csvi_AC_phys.toFixed(4)}</b></div>
-    <div class="tt-r"><span>csvi_S_contact</span><b>${e.csvi_S_contact.toFixed(3)}</b></div>
-    <div class="tt-r"><span>S_contact / S_total</span><b>${(e.S_contact_ratio*100).toFixed(1)}%</b></div>
-    <div class="tt-r"><span>N_YP</span><b>${e.N_YP.toFixed(3)}</b></div>
-    <hr class="tt-sep">
-    <div class="tt-note">${s.note}</div>
-  `;
+    <div class="tt-r"><span>CSVI</span><b>${e.priority.toFixed(4)}</b></div>
+    <div class="tt-r"><span>W_elder</span><b>${e.W_elder.toFixed(4)}</b></div>
+    <div class="tt-r"><span>W_work</span><b>${e.W_work.toFixed(4)}</b></div>`;
 }
 
-// Place classified nodes（激活 / 临界 / 瓶颈：全部绘制）
+// Place classified nodes（潜力：priority 前 NODE_MARKER_POTENTIAL_TOP_FRAC；资源：五主导类各前 NODE_MARKER_RESOURCE_TOP_FRAC）
 function placeNodeMarker(e, layerName) {
   const s = nodeStyles[e.nodeType];
+  if (!s || !NODE_ICONS[e.nodeType]) return;
   const marker = L.marker([e.midLat, e.midLon], { icon: NODE_ICONS[e.nodeType] })
     .bindTooltip(makeTooltip(e), {
       className: 'node-tooltip',
@@ -1001,13 +930,12 @@ function placeNodeMarker(e, layerName) {
   marker.addTo(layerGroups[layerName]);
 }
 
-const activatedDrawList = activatedEdges;
-const bottleneckDrawList = bottleneckEdges;
-const criticalDrawList = criticalEdges;
+const activatedDrawList = takeTopFractionByMetric(activatedInStudy, (e) => e.priority, NODE_MARKER_POTENTIAL_TOP_FRAC);
+const resourceDrawList = takeTopFractionPerResourceDom(resourceCandidatesInStudy, NODE_MARKER_RESOURCE_TOP_FRAC);
+resourceDrawList.forEach((e) => { e.nodeType = 'resource'; });
 
-activatedDrawList.forEach(e => placeNodeMarker(e, 'activated'));
-bottleneckDrawList.forEach(e => placeNodeMarker(e, 'bottleneck'));
-criticalDrawList.forEach(e => placeNodeMarker(e, 'critical'));
+activatedDrawList.forEach((e) => placeNodeMarker(e, 'activated'));
+resourceDrawList.forEach((e) => placeNodeMarker(e, 'resource'));
 
 // ============================================================
 //  STATS UPDATE
@@ -1015,34 +943,32 @@ criticalDrawList.forEach(e => placeNodeMarker(e, 'critical'));
 const actElderN = activatedDrawList.filter(e => e.nodeType === 'act_elder').length;
 const actWorkN = activatedDrawList.filter(e => e.nodeType === 'act_work').length;
 const actBothN = activatedDrawList.filter(e => e.nodeType === 'act_both').length;
-const nDrawn = visibleForColor.length;
-const nAct = activatedEdges.length;
-const nBot = bottleneckEdges.length;
-const nCri = criticalEdges.length;
+const nNetInStudy = networkEdgesInStudy.length;
+const nActAll = activatedInStudy.length;
+const nResAll = resourceCandidatesInStudy.length;
+const nAct = activatedDrawList.length;
+const nRes = resourceDrawList.length;
 
-document.getElementById('st-act').textContent = nAct ? String(nAct) : '0';
-document.getElementById('st-bot').textContent = nBot ? String(nBot) : '0';
-document.getElementById('st-cri').textContent = nCri ? String(nCri) : '0';
-document.getElementById('st-total').textContent = `${nDrawn} / ${edges.length}`;
+document.getElementById('st-act').textContent =
+  nActAll ? `${nAct} / ${nActAll}` : '0';
+document.getElementById('st-res').textContent =
+  nResAll ? `${nRes} / ${nResAll}` : '0';
+document.getElementById('st-total').textContent = `${nNetInStudy} / ${edges.length}`;
 
-document.getElementById('cnt-activated').textContent =
-  nAct ? `${nAct}（A₁ ${actElderN} · A₂ ${actWorkN} · A₃ ${actBothN}）` : '0';
-document.getElementById('cnt-bottleneck').textContent =
-  nBot ? `${nBot} 全部` : '0';
-document.getElementById('cnt-critical').textContent = nCri ? `${nCri} 全部` : '0';
-const nCorPaths = routePack.corridorPaths.length;
-const nCorEdges = routePack.corridorEdgeSet.size;
+document.getElementById('cnt-activated').textContent = nActAll
+  ? `${nAct}/${nActAll} ·50% ·A₁${actElderN} A₂${actWorkN} A₃${actBothN}`
+  : '0';
+document.getElementById('cnt-resource').textContent = nResAll
+  ? `${nRes}/${nResAll} ·五类各10%`
+  : '0';
 
 const noteEl = document.getElementById('st-filter-note');
 if (noteEl) {
-  noteEl.textContent =
-    `底图：CSVI 较高路段约 ${MAP_DISPLAY_TOP_FRAC * 100}%（${nDrawn} 条）。` +
-    ` 节点：激活 ${nAct}、临界 ${nCri}、瓶颈 ${nBot}（全量，与廊道 ${nCorPaths} 条 / ${nCorEdges} 边几何对齐，不绘廊道线）。` +
-    ` 共 ${edges.length} 条边参与分类。`;
+  noteEl.textContent = `界内路网 ${nNetInStudy} 段 · 全表 ${edges.length} · 标点 ${nAct}+${nRes}`;
 }
 
-  const extentMarker = [...activatedDrawList, ...bottleneckDrawList, ...criticalDrawList];
-  const extentSrc = extentMarker.length ? extentMarker : (visibleForColor.length ? visibleForColor : edges);
+  const extentMarker = [...activatedDrawList, ...resourceDrawList];
+  const extentSrc = extentMarker.length ? extentMarker : (nNetInStudy ? networkEdgesInStudy : edges);
   const latExtent = d3.extent(extentSrc, e => e.midLat);
   const lonExtent = d3.extent(extentSrc, e => e.midLon);
   const pad = 0.003;
