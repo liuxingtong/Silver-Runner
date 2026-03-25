@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>因果回路建模与系统动力学仿真 · CLD 二维</title>
+<title>因果回路建模 · CLD 二维</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -32,32 +32,17 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
 .bar .view-btns button:hover,.bar .view-btns button.on{background:var(--mag);color:#fff}
 
 /* ── Cards ── */
-.card{position:fixed;z-index:50;background:var(--surface);backdrop-filter:blur(18px);border:1px solid rgba(233,30,140,0.22);border-radius:8px;padding:12px 14px;font-size:11px;line-height:1.55;box-shadow:0 4px 28px rgba(0,0,0,0.62),inset 0 1px 0 rgba(255,255,255,0.04);overflow-y:auto;transition:max-height 0.3s}
+.card{position:fixed;z-index:50;background:var(--surface);backdrop-filter:blur(18px);border:1px solid rgba(233,30,140,0.22);border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.55;box-shadow:0 4px 28px rgba(0,0,0,0.62),inset 0 1px 0 rgba(255,255,255,0.04);overflow-y:auto;transition:max-height 0.3s}
 .card.collapsed .card-body{display:none}
-.card .ch{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;letter-spacing:1.5px;color:var(--mag);text-transform:uppercase;margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;user-select:none}
-.card .ch .tg{font-size:13px;opacity:0.5}
-.card td{padding:1px 0;vertical-align:top;font-size:10px}
-.card td:first-child{font-family:'JetBrains Mono',monospace;color:var(--mag);white-space:nowrap;padding-right:8px;font-weight:500}
+.card .ch{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;letter-spacing:1.2px;color:#fff;text-transform:uppercase;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;user-select:none;text-shadow:0 0 1px rgba(0,0,0,0.4)}
+.card .ch .tg{font-size:15px;opacity:0.55;color:#fff}
+.card td{padding:2px 0;vertical-align:top;font-size:11px}
+.card td:first-child{font-family:'JetBrains Mono',monospace;color:#fff;white-space:nowrap;padding-right:8px;font-weight:700;font-size:11px}
 .card td:last-child{color:var(--dim)}
-.card code{font-family:'JetBrains Mono',monospace;background:var(--mag-s);color:var(--mag);padding:1px 3px;border-radius:2px;font-size:9px}
+.card code{font-family:'JetBrains Mono',monospace;background:rgba(233,30,140,0.14);color:#fff;font-weight:600;padding:2px 5px;border-radius:2px;font-size:10px;border:1px solid rgba(233,30,140,0.25)}
 
-#card-legend{top:56px;left:14px;max-width:220px;max-height:calc(100vh - 260px)}
-#card-loops{top:56px;right:14px;max-width:230px;max-height:calc(100vh - 260px)}
-#card-eq{bottom:14px;left:14px;max-width:300px;max-height:210px}
-#card-sim{bottom:14px;right:14px;width:340px;max-width:340px;max-height:440px}
-
-/* ── Sim panel ── */
-#card-sim button{font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 9px;background:var(--mag-s);border:1px solid var(--mag-d);color:var(--mag);border-radius:3px;cursor:pointer;transition:all 0.2s}
-#card-sim button:hover{background:var(--mag-d);color:#fff}
-#card-sim button.active{background:var(--mag);color:#fff}
-.sc{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap}
-.sr{display:flex;align-items:center;gap:6px;margin:3px 0}
-.sr label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mag);min-width:28px}
-.sr input[type=range]{flex:1;accent-color:var(--mag);height:2px}
-.sr .v{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);min-width:26px;text-align:right}
-#simC{width:100%;height:110px;margin-top:6px;background:rgba(0,0,0,0.25);border-radius:5px;border:1px solid rgba(233,30,140,0.08)}
-.simL{margin-top:4px;font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace}
-
+#card-legend{top:56px;left:14px;max-width:220px;max-height:calc(100vh - 200px)}
+#card-loops{top:56px;right:14px;max-width:230px;max-height:calc(100vh - 200px)}
 /* ── Tooltip ── */
 #tip{position:fixed;z-index:200;background:var(--ss);border:1px solid var(--mag);border-radius:6px;padding:10px 12px;font-size:11px;pointer-events:none;opacity:0;transition:opacity 0.15s;max-width:280px;box-shadow:0 0 20px var(--mag-g);line-height:1.6}
 #tip .tn{color:var(--mag);font-weight:700;margin-bottom:3px;font-size:12px}
@@ -68,7 +53,7 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
 .leg{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:50;display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:9px;background:var(--surface);padding:6px 14px;border-radius:16px;border:1px solid rgba(233,30,140,0.22);box-shadow:0 4px 20px rgba(0,0,0,0.5)}
 .leg i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
 
-@media(max-width:768px){.card{max-width:180px!important;font-size:9px;padding:8px 10px}#card-sim{max-width:260px!important;width:260px}#simC{height:80px}.leg{font-size:8px;gap:8px;padding:5px 10px}}
+@media(max-width:768px){.card{max-width:180px!important;font-size:10px;padding:8px 10px}.card .ch{font-size:10px}.leg{font-size:8px;gap:8px;padding:5px 10px}}
 </style>
 </head>
 <body>
@@ -78,8 +63,8 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
 
 <div class="bar">
   <div>
-    <h1>因果回路建模 · 系统动力学仿真</h1>
-    <div class="sub">CLD 二维交互 · CAUSAL LOOP · SD · MVR v4 · 2026.03</div>
+    <h1>因果回路建模 · CLD 二维</h1>
+    <div class="sub">CLD 二维交互 · CAUSAL LOOP · MVR v4 · 2026.03</div>
   </div>
   <div class="view-btns">
     <button class="on" onclick="setView('all')">全部</button>
@@ -132,40 +117,6 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
       <tr><td style="color:#00e5ff">B5</td><td>文化摩擦 · 抑制</td></tr>
       <tr><td style="color:#00e5ff">B6</td><td>隔代锁定 · 抑制</td></tr>
     </table>
-  </div>
-</div>
-
-<!-- Equations card -->
-<div class="card" id="card-eq">
-  <div class="ch" onclick="tog(this)">SD 方程（MVR） <span class="tg">−</span></div>
-  <div class="card-body" style="color:var(--dim);line-height:1.65">
-    <code>N10_eq=(N10b+k·N_YP)·(1−γ·N18)</code><br>
-    <code>N09_eq=base+k·N07−k·N02−k·N_YP−0.1·N10</code><br>
-    <code>N_IG_t=N_YP·(1+α·N18)</code><br>
-    <code>dN15=k·N14−k·N17_eff·N15+β·N_IG−k·N15</code><br>
-    <code>dN16=k·N15−k·N_GC−k·N16</code><br>
-    <code>N02_eq=k·N01·N03+k·N05+k·N09</code><br>
-    <code>dN02=0.15·(eq−N02)−k·N02²</code><br>
-    <code>CSVI=(E×S)/(AC+1)</code>
-  </div>
-</div>
-
-<!-- Sim panel -->
-<div class="card" id="card-sim">
-  <div class="ch" onclick="tog(this)">系统动力学模拟 <span class="tg">−</span></div>
-  <div class="card-body">
-    <div class="sc">
-      <button id="btnR" onclick="runSim()">▶ 运行</button>
-      <button onclick="resetSim()">↻ 重置</button>
-      <button id="btnI" onclick="togInt()">N18 干预: OFF</button>
-    </div>
-    <div class="sr"><label>N18</label><input type="range" id="sN18" min="0" max="1" step="0.05" value="0" oninput="updSl()"><span class="v" id="vN18">0.00</span></div>
-    <div class="sr"><label>N_YP</label><input type="range" id="sNYP" min="0" max="1" step="0.05" value="0.4" oninput="updSl()"><span class="v" id="vNYP">0.40</span></div>
-    <div class="sr"><label>N_GC</label><input type="range" id="sNGC" min="0" max="1" step="0.05" value="0.3" oninput="updSl()"><span class="v" id="vNGC">0.30</span></div>
-    <canvas id="simC"></canvas>
-    <div class="simL">
-      <span style="color:#e91e8c">■</span>N02 <span style="color:#00e5ff">■</span>N09 <span style="color:#ff4455">■</span>N10 <span style="color:#39ff85">■</span>N15 <span style="color:#ffb300">■</span>N_IG
-    </div>
   </div>
 </div>
 
@@ -594,7 +545,7 @@ function drawNodeLabelCard(id) {
 function drawNode(id){
   const nd=nodes[id], s=toScreen(id), r=nodeRadius(id);
   const col=typeCol[nd.type], gb=typeGlow[nd.type];
-  const sv = simSt[id]||0;
+  const sv = 0.5;
   const pulse = 0.65 + sv*0.45 + Math.sin(time*2.8+s.x*0.01)*0.1;
   const glowR = r * 4.8;
 
@@ -700,7 +651,6 @@ function render(){
     tip.style.opacity='0';
   }
 }
-render();
 
 // ══════════════════════════════════════════
 // CARD TOGGLE
@@ -709,87 +659,9 @@ function tog(el){
   const card=el.parentElement;
   card.classList.toggle('collapsed');
   el.querySelector('.tg').textContent=card.classList.contains('collapsed')?'+':'−';
-  if(card.id==='card-sim'&&!card.classList.contains('collapsed')){
-    requestAnimationFrame(()=>requestAnimationFrame(drawChart));
-  }
 }
 
-// ══════════════════════════════════════════
-// SD SIMULATION — per §4.3 equations exactly
-// ══════════════════════════════════════════
-let simSt={N02:0.3,N09:0.5,N10:0.3,N15:0.2,N16:0.15,N_IG:0.1,N19:0,N20:0};
-let simH={N02:[],N09:[],N10:[],N15:[],N_IG:[]};
-let simRun=false,simIv=null,simStep=0;
-const SIM_H_KEYS=['N02','N09','N10','N15','N_IG'];
-function seedSimHistory(){
-  SIM_H_KEYS.forEach(k=>{simH[k]=[]});
-  for(let i=0;i<20;i++)SIM_H_KEYS.forEach(k=>simH[k].push(simSt[k]));
-}
-seedSimHistory();
-
-const PM={
-  N01:0.5,N03:0.5,N05:0.4,N07:0.5,N14:0.4,N17_base:0.3,
-  N_YP:0.4,N_GC:0.3,N10_base:0.3,N09_base:0.5,
-  N18:0,alpha:2.0,beta:0.15,gamma:0.6,delta:0.5,
-  k09_N07:0.15,k09_N02:0.20,k09_NYP:0.15,k10_NYP:0.25,
-  k02_social:0.10,k02_access:0.08,k02_comfort:0.12,k02_crowd:0.05,
-  k14:0.10,k17:0.25,k15_decay:0.15,
-  k16_N15:0.15,k16_GC:0.15,k16_decay:0.10,tau_IG:0.10,
-  k19_N02:0.10,k_b4:0.05,k19_decay:0.08,k20_N19:0.12,k20_decay:0.06
-};
-function cl(v){return Math.max(0,Math.min(1,v))}
-function step(){
-  const s=simSt,p=PM;
-  // N10
-  const N10e=cl(p.N10_base+p.k10_NYP*p.N_YP)*(1-p.gamma*p.N18);
-  s.N10+=0.30*(N10e-s.N10);s.N10=cl(s.N10);
-  // N09
-  const N09e=cl(p.N09_base+p.k09_N07*p.N07-p.k09_N02*s.N02-p.k09_NYP*p.N_YP-0.10*s.N10);
-  s.N09+=0.20*(N09e-s.N09);s.N09=cl(s.N09);
-  // N_IG
-  const igt=cl(p.N_YP*(1+p.alpha*p.N18));
-  s.N_IG+=p.tau_IG*(igt-s.N_IG);s.N_IG=cl(s.N_IG);
-  // N17_eff
-  const n17e=cl(p.N17_base*(1-p.delta*p.N18)+0.15*s.N10);
-  // N15
-  s.N15+=p.k14*p.N14-p.k17*n17e*s.N15+p.beta*s.N_IG-p.k15_decay*s.N15;s.N15=cl(s.N15);
-  // N16
-  s.N16+=p.k16_N15*s.N15-p.k16_GC*p.N_GC-p.k16_decay*s.N16;s.N16=cl(s.N16);
-  // N02
-  const N02e=cl(p.k02_social*p.N01*p.N03+p.k02_access*p.N05+p.k02_comfort*s.N09);
-  s.N02+=0.15*(N02e-s.N02)-p.k02_crowd*s.N02*s.N02;s.N02=cl(s.N02);
-  // N19,N20
-  if(p.N18>0){
-    s.N19+=p.k19_N02*s.N02*p.N18-p.k_b4*p.N18*s.N19-p.k19_decay*s.N19;s.N19=cl(s.N19);
-    s.N20+=p.k20_N19*s.N19-p.k20_decay*s.N20;s.N20=cl(s.N20);
-  }
-  const mx2=120;['N02','N09','N10','N15','N_IG'].forEach(k=>{simH[k].push(s[k]);if(simH[k].length>mx2)simH[k].shift();});
-  simStep++;drawChart();
-}
-function runSim(){if(simRun){clearInterval(simIv);simRun=false;document.getElementById('btnR').textContent='▶ 运行';return;}simRun=true;document.getElementById('btnR').textContent='⏸ 暂停';simIv=setInterval(step,80);}
-function resetSim(){clearInterval(simIv);simRun=false;document.getElementById('btnR').textContent='▶ 运行';simSt={N02:0.3,N09:0.5,N10:0.3,N15:0.2,N16:0.15,N_IG:0.1,N19:0,N20:0};simStep=0;seedSimHistory();drawChart();}
-function togInt(){const b=document.getElementById('btnI');if(PM.N18===0){PM.N18=0.6;document.getElementById('sN18').value=0.6;document.getElementById('vN18').textContent='0.60';b.textContent='N18 干预: ON';b.classList.add('active');}else{PM.N18=0;document.getElementById('sN18').value=0;document.getElementById('vN18').textContent='0.00';b.textContent='N18 干预: OFF';b.classList.remove('active');}}
-function updSl(){PM.N18=parseFloat(document.getElementById('sN18').value);PM.N_YP=parseFloat(document.getElementById('sNYP').value);PM.N_GC=parseFloat(document.getElementById('sNGC').value);document.getElementById('vN18').textContent=PM.N18.toFixed(2);document.getElementById('vNYP').textContent=PM.N_YP.toFixed(2);document.getElementById('vNGC').textContent=PM.N_GC.toFixed(2);const b=document.getElementById('btnI');if(PM.N18>0){b.textContent='N18 干预: ON';b.classList.add('active');}else{b.textContent='N18 干预: OFF';b.classList.remove('active');}}
-
-// ══════════════════════════════════════════
-// SIM CHART
-// ══════════════════════════════════════════
-const sC=document.getElementById('simC'),sX=sC.getContext('2d');
-function drawChart(){
-  const w=sC.clientWidth,h=sC.clientHeight;
-  if(w<8||h<8)return;
-  sC.width=w*2;sC.height=h*2;sX.setTransform(1,0,0,1,0,0);sX.scale(2,2);sX.clearRect(0,0,w,h);
-  sX.strokeStyle='rgba(233,30,140,0.08)';sX.lineWidth=0.5;
-  for(let i=0;i<=4;i++){const y=6+(h-12)*(i/4);sX.beginPath();sX.moveTo(0,y);sX.lineTo(w,y);sX.stroke();}
-  sX.font='7px JetBrains Mono';sX.fillStyle='rgba(255,255,255,0.18)';
-  for(let i=0;i<=4;i++){const y=6+(h-12)*(i/4);sX.fillText((1-i/4).toFixed(1),1,y+3);}
-  const cols={N02:'#e91e8c',N09:'#00e5ff',N10:'#ff4455',N15:'#39ff85',N_IG:'#ffb300'};
-  for(const[k,arr]of Object.entries(simH)){if(arr.length<2)continue;sX.beginPath();sX.strokeStyle=cols[k];sX.lineWidth=1.4;sX.globalAlpha=0.85;arr.forEach((v,i)=>{const x=18+(w-22)*(i/120),y=6+(h-12)*(1-v);i===0?sX.moveTo(x,y):sX.lineTo(x,y);});sX.stroke();sX.globalAlpha=1;}
-  sX.font='8px JetBrains Mono';sX.fillStyle='rgba(255,255,255,0.25)';sX.fillText('t='+simStep,w-32,h-3);
-}
-drawChart();
-if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>drawChart()).observe(sC);
-window.addEventListener('resize',()=>drawChart());
+render();
 </script>
 </body>
 </html>

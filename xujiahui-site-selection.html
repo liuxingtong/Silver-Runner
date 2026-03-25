@@ -559,7 +559,7 @@
     </div>
     <div class="lg-item">
       <div class="lg-symbol"><svg width="16" height="16"><rect x="1" y="1" width="14" height="14" rx="2" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-dasharray="3,2"/></svg></div>
-      <div class="lg-label">资源场域（五主导，每类 ≤3 块）<span class="lg-sub">DBSCAN + 跨度分裂；聚类中心为<strong>小号青框</strong>（医/科/商/体/文·序号）；另附四座<strong>文化地标</strong>同式卡片</span></div>
+      <div class="lg-label">资源场域（五主导，每类 ≤3 块）<span class="lg-sub">DBSCAN + 跨度分裂；聚类中心为<strong>小号青框</strong>（医/科/商/体/文·序号）；10 ha 按各簇 AC 总量比例</span></div>
     </div>
   </div>
   <hr class="lg-divider">
@@ -1580,19 +1580,6 @@ function selectResourceFieldSystems(edges) {
 const FIELD_COLORS = ['#ff4dad', '#ff6b9d', '#e91e8c', '#ff8ec7', '#d81b87', '#f48fb1'];
 const RESOURCE_FIELD_COLORS = ['#00e5ff', '#26c6da', '#4dd0e1', '#18ffff', '#a7ffeb'];
 
-/**
- * 静态地标：与全页数据同为 WGS84 / EPSG:4326（与 OSM 底图、cld_priority 的 lon/lat、
- * data/daxujiahui-four-streets-union.geojson 一致）。注意：GeoJSON 文件内坐标序为 [lng, lat]；
- * Leaflet API 为 [lat, lng]；此处手写点用 lat + lng，避免与边表字段 lon 混淆。
- * 武康大楼坐标取自 OSM（Nominatim Wukang Mansion）；其余为示意，可对照底图微调。
- */
-const STATIC_LANDMARK_CARDS = [
-  { name: '上海体育馆', lat: 31.1824, lng: 121.4376 },
-  { name: '武康大楼', lat: 31.2062561, lng: 121.4337292 },
-  { name: '柯灵故居', lat: 31.2139, lng: 121.44115 },
-  { name: '赵丹旧居', lat: 31.21115, lng: 121.44465 }
-];
-
 /** 绘制上限（瓶颈除外；统计仍用全量） */
 const PERF = {
   maxCatalystMarkersPerField: 18,
@@ -1611,7 +1598,7 @@ function shortenResourceFieldLabel(lab) {
   return String(lab).replace(/^(医疗|科技|商业|体育|文化)/, (m) => map[m] || m);
 }
 
-/** 小号青框 divIcon（资源聚类中心与地标共用） */
+/** 小号青框 divIcon（资源聚类中心标签） */
 function compactCyanChipDivIcon(labelText, borderColor) {
   const c = borderColor || '#00e5ff';
   const esc = escapeHtml(shortenResourceFieldLabel(labelText));
@@ -1779,19 +1766,6 @@ function render(edges, classified, fields, resourceFields, onDone) {
     });
   }
 
-  function phaseStaticLandmarkChips() {
-    const accent = '#00e5ff';
-    for (let i = 0; i < STATIC_LANDMARK_CARDS.length; i++) {
-      const lm = STATIC_LANDMARK_CARDS[i];
-      L.marker([lm.lat, lm.lng], {
-        pane: 'userPane',
-        interactive: false,
-        zIndexOffset: 275,
-        icon: compactCyanChipDivIcon(lm.name, accent)
-      }).addTo(map);
-    }
-  }
-
   /** 本页不绘制廊道/瓶颈折线，算法内部仍计算 corridorPaths 供统计参考 */
   function phaseBottleneckOverlay() {}
 
@@ -1803,10 +1777,6 @@ function render(edges, classified, fields, resourceFields, onDone) {
     resFs.forEach((fs) => {
       appendCircleCornerPoints(fs.circleCenterLat, fs.circleCenterLon, fs.circleRadiusOuterM, allPts);
     });
-    for (let li = 0; li < STATIC_LANDMARK_CARDS.length; li++) {
-      const lm = STATIC_LANDMARK_CARDS[li];
-      allPts.push([lm.lat, lm.lng]);
-    }
     if (allPts.length) {
       let minLat = allPts[0][0], maxLat = allPts[0][0], minLon = allPts[0][1], maxLon = allPts[0][1];
       for (let k = 1; k < allPts.length; k++) {
@@ -1828,7 +1798,6 @@ function render(edges, classified, fields, resourceFields, onDone) {
       requestAnimationFrame(() => {
         phaseCatalystDots();
         phaseResourceDotsAndLabels();
-        phaseStaticLandmarkChips();
         requestAnimationFrame(() => {
           phaseBottleneckOverlay();
           requestAnimationFrame(phaseStatsAndFit);

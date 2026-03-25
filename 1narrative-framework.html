@@ -220,11 +220,6 @@ body::before {
   height: clamp(440px, 58vw, 860px);
   min-height: 400px;
 }
-.card-slot.loop-embed .aspect.loop-embed-aspect {
-  padding-top: 0;
-  height: clamp(640px, 78vh, 920px);
-  min-height: 600px;
-}
 .card-slot.dual-line-embed .aspect.dual-line-aspect {
   padding-top: 0;
   height: clamp(600px, 88vh, 940px);
@@ -278,6 +273,17 @@ body::before {
   .card-slot.prototype-embed .aspect.prototype-embed-aspect {
     height: clamp(540px, 92vh, 760px);
     min-height: 520px;
+  }
+}
+.card-slot.cognitive-axis-embed .aspect.cognitive-axis-aspect {
+  padding-top: 0;
+  height: clamp(520px, 62vw, 700px);
+  min-height: 500px;
+}
+@media (max-width: 600px) {
+  .card-slot.cognitive-axis-embed .aspect.cognitive-axis-aspect {
+    height: clamp(560px, 92vh, 780px);
+    min-height: 540px;
   }
 }
 .card-slot.map-intervention-embed .aspect.map-intervention-aspect {
@@ -565,13 +571,13 @@ body::before {
     0 20px 60px rgba(0,0,0,0.5),
     inset 0 0 0 1px rgba(233,30,140,0.06);
 }
-#s11 .callout {
+#s10 .callout {
   border-left-color: var(--magenta);
   background: linear-gradient(90deg, var(--magenta-08), transparent);
   color: var(--text-dim);
 }
-#s11 .section-desc strong { color: var(--magenta); font-weight: 600; }
-#s11 .card-slot.prototype-embed {
+#s10 .section-desc strong { color: var(--magenta); font-weight: 600; }
+#s10 .card-slot.cognitive-axis-embed {
   border-color: var(--magenta-20);
   box-shadow:
     0 0 72px rgba(233,30,140,0.1),
@@ -595,10 +601,9 @@ body::before {
   <a href="#s8"><span class="dot-label">08 节点类型</span></a>
   <a href="#s8-map"><span class="dot-label">08 节点地图</span></a>
   <a href="#s9"><span class="dot-label">09 节点选址</span></a>
-  <a href="#s10"><span class="dot-label">10 闭环机制</span></a>
-  <a href="#s11"><span class="dot-label">11 三类原型</span></a>
-  <a href="#s12"><span class="dot-label">12 因果·SD</span></a>
-  <a href="#s13"><span class="dot-label">13 开放问题</span></a>
+  <a href="#s10"><span class="dot-label">10 认知轴线</span></a>
+  <a href="#s11"><span class="dot-label">11 因果回路</span></a>
+  <a href="#s12"><span class="dot-label">12 开放问题</span></a>
 </nav>
 
 <section id="hero" class="section">
@@ -938,13 +943,13 @@ body::before {
       潜力与资源：<em>地图分布</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      大徐汇边界内街段底图；<strong>潜力</strong>为激活三亚型（全界内激活节点按 CSVI 取前 50% 标点），<strong>资源</strong>为五主导列可判类型且非潜力，<strong>医疗 / 科技 / 商业 / 体育 / 文化五类各自</strong>在界内取前 10% 标点（不按多列 AC 平均后再截断）。
+      以<strong>斜田潜力区</strong>为核，识别四类资源与五条认知轴，推动资源向老年人汇聚，构建<strong>「一核五轴·多点共生」</strong>网络。
     </p>
 
     <div class="card-slot map-intervention-embed reveal reveal-delay-3" style="margin-top: 32px;">
       <span class="slot-badge">潜力 · 资源 · 街段地图</span>
       <div class="aspect map-intervention-aspect">
-        <iframe data-src="map_intervention_nodes.html?v=10" loading="lazy" title="潜力与资源节点 · 街段地图"></iframe>
+        <iframe data-src="map_intervention_nodes.html?v=11" loading="lazy" title="潜力与资源节点 · 街段地图"></iframe>
         <div class="placeholder">
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
           <span class="ph-label">潜力 · 资源 · 地图</span>
@@ -960,16 +965,16 @@ body::before {
   <div class="section-inner">
     <div class="section-num reveal">09</div>
     <h2 class="section-title reveal reveal-delay-1">
-      节点选址：<em>三尺度聚焦</em>
+      节点选址：<em>空间结构</em>
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      从大徐汇到缓冲区再到基地内部，逐级收敛到若干具体选址；节点标注类型、得分区间与优先级。
+      将潜力节点聚集区域定为斜田认知潜力核心区，识别医疗、体育、商业、科技四类资源区，制定人机共生空间导则引导资源向老年人流动，最终形成商业、体育、科技及两条社会认知轴线，构建"一核五轴·多点共生"的认知支持网络。
     </p>
 
     <div class="card-slot map-intervention-embed reveal reveal-delay-3" style="margin-top: 32px;">
-      <span class="slot-badge">节点选址 × 三尺度聚焦</span>
+      <span class="slot-badge">节点选址 × 空间结构</span>
       <div class="aspect map-intervention-aspect">
-        <iframe data-src="xujiahui-site-selection.html?v=boundary-fields-landmarks" loading="lazy" title="人机触媒-认知轴线-场域系统"></iframe>
+        <iframe data-src="xujiahui-site-selection.html?v=boundary-fields-noland" loading="lazy" title="人机触媒-认知轴线-场域系统"></iframe>
         <div class="placeholder">
           <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
           <span class="ph-label">人机触媒-认知轴线-场域系统（地图）</span>
@@ -985,19 +990,20 @@ body::before {
   <div class="section-inner">
     <div class="section-num reveal">10</div>
     <h2 class="section-title reveal reveal-delay-1">
-      感知 → 优化 → <em>干预</em> 闭环
+      认知恢复轴线 · <em>人机共生</em>空间导则
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      以约 5 分钟为周期随空间状态调整干预；效果回到感知侧，参数迭代更新，形成<strong>闭环</strong>。
+      沿<strong>潜力区—认知廊道—资源区</strong>展开轴线：交感街道、横行连廊、感知公园与第三空间 Box 等原型如何落位。
+      交互图<strong>右下</strong>可切换三条导则图层——感知-判断-干预闭环、节点就地生长与交替、廊道时空节奏——与上文节点类型与选址形成「在哪、做成什么样、按什么规则运转」的衔接。
     </p>
 
-    <div class="card-slot loop-embed reveal reveal-delay-3" style="margin-top: 32px;">
-      <span class="slot-badge">闭环机制</span>
-      <div class="aspect loop-embed-aspect">
-        <iframe data-src="feedback-loop.html" loading="lazy" title="感知–优化–干预闭环"></iframe>
+    <div class="card-slot cognitive-axis-embed reveal reveal-delay-3" style="margin-top: 32px;">
+      <span class="slot-badge">认知轴线 · 导则叠加</span>
+      <div class="aspect cognitive-axis-aspect">
+        <iframe data-src="cognitive-axis.html?v=1" loading="lazy" title="认知恢复轴线 · 人机共生空间导则（潜力区—廊道—资源区）"></iframe>
         <div class="placeholder">
-          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.5"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 3v5h-5"/></svg></div>
-          <span class="ph-label">感知–优化–干预 闭环卡片</span>
+          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M4 12h4M16 12h4M12 4v4M12 16v4"/><path d="M5 5l2.5 2.5M17 17l2.5 2.5M19 5l-2.5 2.5M7 17l-2.5 2.5"/></svg></div>
+          <span class="ph-label">认知恢复轴线 · 导则切换（右下）</span>
         </div>
       </div>
     </div>
@@ -1010,57 +1016,31 @@ body::before {
   <div class="section-inner">
     <div class="section-num reveal">11</div>
     <h2 class="section-title reveal reveal-delay-1">
-      三类空间改造<em>原型</em>
+      因果回路<em>建模</em>（CLD 交互）
     </h2>
     <p class="section-desc reveal reveal-delay-2">
-      在<strong>大徐汇—缓冲区—基地</strong>三尺度上，对应<strong>触媒装置、连接廊道、场域系统</strong>三种改法；
-      与节点类型配合：类型定「在哪」，原型定「做成什么样」。
+      两种失灵背后存在自我强化回路；下图以二维因果回路呈现<strong>多回路同时作用</strong>时的结构与关键节点。
     </p>
 
-    <div class="card-slot prototype-embed reveal reveal-delay-3" style="margin-top: 32px;">
-      <span class="slot-badge">三尺度空间原型</span>
-      <div class="aspect prototype-embed-aspect">
-        <iframe data-src="prototype-cards.html?v=4" loading="lazy" title="三类空间改造原型 · 触媒装置 / 连接廊道 / 场域系统"></iframe>
+    <div class="card-slot cld-embed reveal reveal-delay-3" style="margin-top: 32px;">
+      <span class="slot-badge">因果回路 · 交互示意</span>
+      <div class="aspect cld-embed-aspect">
+        <iframe data-src="cld_2d_interactive.html" loading="lazy" title="因果回路建模 · CLD 二维交互"></iframe>
         <div class="placeholder">
-          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="1.5"><rect x="3" y="5" width="5.5" height="14" rx="1.25"/><rect x="9.25" y="5" width="5.5" height="14" rx="1.25"/><rect x="15.5" y="5" width="5.5" height="14" rx="1.25"/></svg></div>
-          <span class="ph-label">三尺度原型 · 触媒 / 廊道 / 场域</span>
+          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><path d="M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M19.07 4.93l-2.83 2.83M7.76 16.24l-2.83 2.83"/></svg></div>
+          <span class="ph-label">因果回路建模 · CLD 二维</span>
         </div>
       </div>
     </div>
+
   </div>
 </section>
 
 <div class="divider"></div>
 
 <section id="s12" class="section">
-  <div class="section-inner">
-    <div class="section-num reveal">12</div>
-    <h2 class="section-title reveal reveal-delay-1">
-      因果回路<em>建模</em>与系统动力学<em>仿真</em>
-    </h2>
-    <p class="section-desc reveal reveal-delay-2">
-      两种失灵背后存在自我强化回路；仿真用于检验<strong>多回路同时干预</strong>时系统能否越过关键转折。
-    </p>
-
-    <div class="card-slot cld-embed reveal reveal-delay-3" style="margin-top: 32px;">
-      <span class="slot-badge">因果回路 · 交互示意</span>
-      <div class="aspect cld-embed-aspect">
-        <iframe data-src="cld_2d_interactive.html" loading="lazy" title="因果回路建模与系统动力学仿真 · CLD 二维交互"></iframe>
-        <div class="placeholder">
-          <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--magenta)" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><path d="M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M19.07 4.93l-2.83 2.83M7.76 16.24l-2.83 2.83"/></svg></div>
-          <span class="ph-label">因果回路建模 · CLD 二维 + SD</span>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<section id="s13" class="section">
   <div class="section-inner" style="max-width: 720px;">
-    <div class="section-num reveal">13</div>
+    <div class="section-num reveal">12</div>
     <h2 class="section-title reveal reveal-delay-1">
       开放问题与<em>系统边界</em>
     </h2>
