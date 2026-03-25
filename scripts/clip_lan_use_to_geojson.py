@@ -48,6 +48,45 @@ def main() -> None:
     r = shapefile.Reader(SHP_BASE)
     feats = []
     n = len(r.shapes())
+
+    def props_for_shape_index(idx: int) -> dict:
+        """若无 .dbf 或读记录失败，退化为占位类型；有属性时写入 landuse_type / name。"""
+        out: dict = {"landuse_type": "用地", "name": f"地块{idx}", "fid": idx}
+        try:
+            sr = r.shapeRecord(idx)
+            flds = [f[0] for f in r.fields[1:]]
+            row = list(sr.record)
+            d: dict = {}
+            for j, name in enumerate(flds):
+                if j >= len(row):
+                    break
+                v = row[j]
+                if isinstance(v, bytes):
+                    v = v.decode("utf-8", errors="replace")
+                d[name] = v
+            for cand in (
+                "landuse_type",
+                "LANDUSE",
+                "YDLX",
+                "用地性质",
+                "DLMC",
+                "GXDLMC",
+                "TYPE",
+                "类型",
+                "GHYT",
+                "用地",
+            ):
+                if cand in d and d[cand] not in (None, ""):
+                    out["landuse_type"] = str(d[cand]).strip()
+                    break
+            for ncand in ("NAME", "MC", "名称", "name"):
+                if ncand in d and d[ncand] not in (None, ""):
+                    out["name"] = str(d[ncand]).strip()
+                    break
+        except Exception:
+            pass
+        return out
+
     for i in range(n):
         shp = r.shape(i)
         bb = tuple(shp.bbox[:4])
@@ -60,7 +99,7 @@ def main() -> None:
         feats.append(
             {
                 "type": "Feature",
-                "properties": {"landuse_type": "用地", "name": f"地块{i}", "fid": i},
+                "properties": props_for_shape_index(i),
                 "geometry": gi,
             }
         )

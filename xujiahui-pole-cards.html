@@ -37,15 +37,18 @@
     overflow-x: hidden;
   }
 
-  /* ─── GRID：四列并排（嵌入叙事页）；窄屏降为 2→1 列 ─── */
+  /* ─── GRID：五列并排；窄屏降为 3→2→1 列 ─── */
   .grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 10px;
     width: 100%;
     max-width: 100%;
   }
-  @media (max-width: 1100px) {
+  @media (max-width: 1400px) {
+    .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 900px) {
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 520px) {
@@ -213,6 +216,80 @@
     line-height: 1.45;
   }
   .tension-bar strong { color: var(--magenta-light); font-weight:600; }
+
+  /* ─── HIGHLIGHT CARD (科技极核专属 · 全玫红增强) ─── */
+  .card--highlight {
+    border-color: var(--magenta);
+    border-width: 1.5px;
+    background: #14101A;
+    box-shadow:
+      0 0 0 1px rgba(233,30,140,0.55),
+      0 0 28px rgba(233,30,140,0.18),
+      0 0 60px rgba(233,30,140,0.07),
+      inset 0 0 40px rgba(233,30,140,0.05);
+  }
+  .card--highlight::before {
+    background-image:
+      linear-gradient(rgba(233,30,140,0.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(233,30,140,0.10) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+  /* 顶部横幅 */
+  .unique-crown {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: linear-gradient(90deg, rgba(233,30,140,0.22), rgba(233,30,140,0.06), transparent);
+    border-bottom: 1px solid rgba(233,30,140,0.55);
+    font-size: 7.5px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--magenta-light);
+    position: relative;
+    z-index: 1;
+  }
+  .unique-crown::before {
+    content: '◈';
+    font-size: 10px;
+    color: var(--magenta);
+  }
+  .card--highlight .card-header {
+    background: linear-gradient(90deg, rgba(233,30,140,0.10), transparent);
+    border-bottom-color: rgba(233,30,140,0.45);
+  }
+  .card--highlight .pole-badge {
+    background: rgba(233,30,140,0.22);
+    border-color: rgba(233,30,140,0.7);
+    color: #FF4DAD;
+    box-shadow: 0 0 6px rgba(233,30,140,0.25);
+  }
+  .card--highlight .pole-name {
+    color: #fff;
+    text-shadow: 0 0 12px rgba(233,30,140,0.5);
+  }
+  .card--highlight .map-box {
+    border-bottom-color: rgba(233,30,140,0.45);
+    background: #0F0C16;
+  }
+  .card--highlight .big-num {
+    color: #fff;
+    text-shadow: 0 0 20px rgba(233,30,140,0.6);
+  }
+  .card--highlight .big-num sub {
+    color: var(--magenta-light);
+  }
+  .card--highlight .data-tag {
+    background: rgba(233,30,140,0.20);
+    border-color: rgba(233,30,140,0.60);
+    color: #FF4DAD;
+  }
+  .card--highlight .tension-bar {
+    background: linear-gradient(90deg, rgba(233,30,140,0.18), rgba(233,30,140,0.04), transparent);
+    border-top-color: rgba(233,30,140,0.45);
+  }
 </style>
 </head>
 <body>
@@ -416,43 +493,112 @@
     </div>
   </div>
 
-  <!-- ══════════ 04 科技极核 ══════════ -->
+  <!-- ══════════ 04 体育极核 ══════════ -->
   <div class="card">
     <div class="card-header">
       <span class="pole-badge">P-04</span>
+      <span class="pole-name">体育极核</span>
+    </div>
+
+    <!-- 抽象地图：公园轮廓 + 三大场馆 -->
+    <div class="map-box">
+      <svg viewBox="0 0 240 110" xmlns="http://www.w3.org/2000/svg">
+        <!-- 公园六边形轮廓 -->
+        <polygon points="60,8 185,8 210,55 185,102 60,102 35,55"
+          fill="rgba(233,30,140,0.05)" stroke="rgba(233,30,140,0.28)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <!-- 跑道虚线圈 -->
+        <ellipse cx="120" cy="55" rx="52" ry="38"
+          fill="none" stroke="rgba(233,30,140,0.20)" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <!-- 体育场"八万人" 椭圆 -->
+        <ellipse cx="120" cy="36" rx="27" ry="17"
+          fill="rgba(233,30,140,0.13)" stroke="#E91E8C" stroke-width="1.3"/>
+        <text x="109" y="40" fill="#FF4DAD" font-size="7" font-family="Space Grotesk" font-weight="700">八万人</text>
+        <!-- 体育馆"万体馆" 圆 -->
+        <circle cx="82" cy="76" r="13"
+          fill="rgba(233,30,140,0.10)" stroke="#E91E8C" stroke-width="1.1"/>
+        <text x="70" y="80" fill="rgba(233,30,140,0.85)" font-size="6.5" font-family="Space Grotesk" font-weight="600">万体馆</text>
+        <!-- 游泳馆 -->
+        <rect x="139" y="65" width="34" height="22" rx="4"
+          fill="rgba(233,30,140,0.08)" stroke="rgba(233,30,140,0.55)" stroke-width="1" stroke-dasharray="3 2"/>
+        <text x="143" y="79" fill="rgba(233,30,140,0.75)" font-size="6.5" font-family="Space Grotesk">游泳馆</text>
+        <!-- 万体汇综合馆 -->
+        <rect x="95" y="56" width="50" height="13" rx="2"
+          fill="rgba(233,30,140,0.16)" stroke="rgba(233,30,140,0.40)" stroke-width="0.8"/>
+        <text x="99" y="65" fill="rgba(233,30,140,0.9)" font-size="5.8" font-family="Space Grotesk" font-weight="600">万体汇综合馆</text>
+        <text x="8" y="104" fill="rgba(233,30,140,0.4)" font-size="7" font-family="Space Grotesk">徐家汇体育公园示意</text>
+      </svg>
+    </div>
+
+    <div class="big-stat">
+      <div class="big-num">36<sub>万㎡</sub></div>
+      <div class="big-label">市中心最大体育公园 · 总建筑面积 30 万㎡</div>
+    </div>
+
+    <div class="data-rows">
+      <div class="data-item">
+        <div class="data-item-label">核心场馆"三件套"容量</div>
+        <div class="data-item-value">体育场 8万座 · 体育馆 1.5万座 · 游泳馆</div>
+        <div class="bar-track"><div class="bar-fill" style="width:92%"></div></div>
+      </div>
+      <div class="data-item">
+        <div class="data-item-label">万体汇综合馆 · 室内运动场地</div>
+        <div class="data-item-value">35 片羽毛球 · 30 片乒乓 · 3 片网球</div>
+      </div>
+      <div class="data-item">
+        <div class="data-item-label">双圈环形健身跑道</div>
+        <div class="data-item-value">绕场约 2.5 公里 · 24h 全天开放</div>
+        <div class="bar-track"><div class="bar-fill" style="width:75%"></div></div>
+      </div>
+      <div class="data-tag">长者晨练专区 · 全龄共享运动场景</div>
+    </div>
+
+    <div class="tension-bar">
+      市中心最大运动公园开辟<strong>老年健康行为干预</strong>入口，跑道与专区提供低门槛参与路径
+    </div>
+  </div>
+
+  <!-- ══════════ 05 科技极核 ══════════ -->
+  <div class="card card--highlight">
+    <div class="unique-crown">唯一 AI 赋能产业极核 · 干预基础设施所在</div>
+    <div class="card-header">
+      <span class="pole-badge">P-05</span>
       <span class="pole-name">科技极核</span>
     </div>
 
     <!-- 抽象地图：企业聚点 -->
     <div class="map-box">
       <svg viewBox="0 0 240 110" xmlns="http://www.w3.org/2000/svg">
-        <line x1="0"   y1="55"  x2="240" y2="55"  stroke="rgba(233,30,140,0.07)" stroke-width="1"/>
-        <line x1="120" y1="0"   x2="120" y2="110" stroke="rgba(233,30,140,0.07)" stroke-width="1"/>
+        <line x1="0"   y1="55"  x2="240" y2="55"  stroke="rgba(233,30,140,0.10)" stroke-width="1"/>
+        <line x1="120" y1="0"   x2="120" y2="110" stroke="rgba(233,30,140,0.10)" stroke-width="1"/>
         <!-- 连线网络 -->
-        <line x1="80"  y1="30"  x2="120" y2="55"  stroke="rgba(233,30,140,0.2)" stroke-width="1"/>
-        <line x1="120" y1="55"  x2="160" y2="35"  stroke="rgba(233,30,140,0.2)" stroke-width="1"/>
-        <line x1="120" y1="55"  x2="155" y2="80"  stroke="rgba(233,30,140,0.2)" stroke-width="1"/>
-        <line x1="120" y1="55"  x2="85"  y2="78"  stroke="rgba(233,30,140,0.2)" stroke-width="1"/>
-        <line x1="80"  y1="30"  x2="160" y2="35"  stroke="rgba(233,30,140,0.1)" stroke-width="1"/>
-        <line x1="85"  y1="78"  x2="155" y2="80"  stroke="rgba(233,30,140,0.1)" stroke-width="1"/>
-        <line x1="55"  y1="50"  x2="80"  y2="30"  stroke="rgba(233,30,140,0.12)" stroke-width="1"/>
-        <line x1="185" y1="55"  x2="160" y2="35"  stroke="rgba(233,30,140,0.12)" stroke-width="1"/>
+        <line x1="80"  y1="30"  x2="120" y2="55"  stroke="rgba(233,30,140,0.35)" stroke-width="1.2"/>
+        <line x1="120" y1="55"  x2="160" y2="35"  stroke="rgba(233,30,140,0.35)" stroke-width="1.2"/>
+        <line x1="120" y1="55"  x2="155" y2="80"  stroke="rgba(233,30,140,0.35)" stroke-width="1.2"/>
+        <line x1="120" y1="55"  x2="85"  y2="78"  stroke="rgba(233,30,140,0.35)" stroke-width="1.2"/>
+        <line x1="80"  y1="30"  x2="160" y2="35"  stroke="rgba(233,30,140,0.18)" stroke-width="1"/>
+        <line x1="85"  y1="78"  x2="155" y2="80"  stroke="rgba(233,30,140,0.18)" stroke-width="1"/>
+        <line x1="55"  y1="50"  x2="80"  y2="30"  stroke="rgba(233,30,140,0.20)" stroke-width="1"/>
+        <line x1="185" y1="55"  x2="160" y2="35"  stroke="rgba(233,30,140,0.20)" stroke-width="1"/>
         <!-- 核心节点 -->
-        <circle cx="120" cy="55" r="7"  fill="#E91E8C" opacity="0.95"/>
-        <circle cx="80"  cy="30" r="4.5" fill="#E91E8C" opacity="0.7"/>
-        <circle cx="160" cy="35" r="4"  fill="#E91E8C" opacity="0.65"/>
-        <circle cx="155" cy="80" r="3.5" fill="#E91E8C" opacity="0.55"/>
-        <circle cx="85"  cy="78" r="3.5" fill="#E91E8C" opacity="0.55"/>
-        <circle cx="55"  cy="50" r="3"  fill="#E91E8C" opacity="0.4"/>
-        <circle cx="185" cy="55" r="3"  fill="#E91E8C" opacity="0.4"/>
-        <circle cx="130" cy="20" r="2.5" fill="#E91E8C" opacity="0.35"/>
-        <circle cx="100" cy="92" r="2.5" fill="#E91E8C" opacity="0.3"/>
-        <!-- 中心光晕 -->
-        <circle cx="120" cy="55" r="16" fill="none" stroke="#E91E8C" stroke-width="0.8" opacity="0.2">
-          <animate attributeName="r" from="14" to="26" dur="3s" repeatCount="indefinite"/>
-          <animate attributeName="opacity" from="0.3" to="0" dur="3s" repeatCount="indefinite"/>
+        <circle cx="120" cy="55" r="8"  fill="#E91E8C" opacity="1"/>
+        <circle cx="80"  cy="30" r="5"  fill="#E91E8C" opacity="0.8"/>
+        <circle cx="160" cy="35" r="4.5" fill="#E91E8C" opacity="0.75"/>
+        <circle cx="155" cy="80" r="4"  fill="#E91E8C" opacity="0.65"/>
+        <circle cx="85"  cy="78" r="4"  fill="#E91E8C" opacity="0.65"/>
+        <circle cx="55"  cy="50" r="3.5" fill="#E91E8C" opacity="0.5"/>
+        <circle cx="185" cy="55" r="3.5" fill="#E91E8C" opacity="0.5"/>
+        <circle cx="130" cy="20" r="3"  fill="#E91E8C" opacity="0.45"/>
+        <circle cx="100" cy="92" r="3"  fill="#E91E8C" opacity="0.40"/>
+        <!-- 中心光晕 双环 -->
+        <circle cx="120" cy="55" r="16" fill="none" stroke="#E91E8C" stroke-width="1.2" opacity="0.3">
+          <animate attributeName="r" from="12" to="28" dur="2.8s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" from="0.45" to="0" dur="2.8s" repeatCount="indefinite"/>
         </circle>
-        <text x="8" y="100" fill="rgba(233,30,140,0.4)" font-size="7" font-family="Space Grotesk">AI企业分布网络</text>
+        <circle cx="120" cy="55" r="22" fill="none" stroke="#FF4DAD" stroke-width="0.8" opacity="0.15">
+          <animate attributeName="r" from="18" to="38" dur="2.8s" begin="1.4s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" from="0.3" to="0" dur="2.8s" begin="1.4s" repeatCount="indefinite"/>
+        </circle>
+        <text x="8" y="100" fill="rgba(233,30,140,0.5)" font-size="7" font-family="Space Grotesk">AI企业分布网络</text>
       </svg>
     </div>
 
@@ -487,7 +633,7 @@
 
 <div style="width:100%;padding-top:6px;border-top:1px solid rgba(233,30,140,0.12);text-align:center;">
   <span style="font-size:8px;color:var(--text-dim);letter-spacing:0.08em;font-family:'Space Grotesk',sans-serif;">
-    三极核造就认知训练场 · 空间压力压制潜力 → 人机共生介入点
+    五极核造就多维认知训练场 · 医疗 · 商业 · 交通 · 科技 · 体育 → 人机共生介入矩阵
   </span>
 </div>
 

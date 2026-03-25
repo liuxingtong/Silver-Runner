@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>场域系统选址 · 触媒 → 廊道 → 边界</title>
+<title>人机触媒-认知轴线-场域系统</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="cluster-field-circles.js"></script>
@@ -107,66 +107,6 @@
     margin:12px 0;
   }
 
-  /* Stats */
-  .stats-panel{
-    position:fixed;bottom:28px;left:28px;
-    background:rgba(12,12,14,0.94);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:12px;
-    padding:16px 20px;
-    z-index:1000;
-    backdrop-filter:blur(14px);
-    width:300px;
-  }
-  .st-title{
-    font-size:9px;letter-spacing:2px;text-transform:uppercase;
-    color:rgba(255,255,255,0.3);margin-bottom:10px;
-  }
-  .st-row{
-    display:flex;justify-content:space-between;align-items:center;
-    margin-bottom:6px;font-size:12px;
-  }
-  .st-row .st-lbl{color:rgba(255,255,255,0.5)}
-  .st-row .st-val{font-weight:600;letter-spacing:-0.3px}
-  .st-row .c-a{color:var(--field-a)}
-  .st-row .c-b{color:var(--field-b)}
-  .st-row .c-c{color:var(--field-c)}
-  .st-row .c-total{color:var(--magenta-bright)}
-  .st-row .c-10ha{color:var(--magenta-2);font-size:11px}
-
-  .parcel-stats-empty{
-    font-size:11px;color:rgba(255,255,255,0.38);font-style:italic;line-height:1.55;
-    padding:4px 0 2px;
-  }
-  #parcel-stats-body .st-row{margin-bottom:5px}
-
-  /* Algorithm panel */
-  .algo-panel{
-    position:fixed;top:118px;right:28px;
-    background:rgba(12,12,14,0.94);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:12px;
-    padding:16px 20px;
-    z-index:1000;
-    backdrop-filter:blur(14px);
-    width:260px;
-  }
-  .algo-panel .ap-title{
-    font-size:9px;letter-spacing:2px;text-transform:uppercase;
-    color:rgba(255,255,255,0.3);margin-bottom:10px;
-  }
-  .algo-panel .ap-step{
-    font-size:10.5px;color:rgba(255,255,255,0.55);line-height:1.55;
-    margin-bottom:6px;padding-left:14px;position:relative;
-  }
-  .algo-panel .ap-step::before{
-    content:'';position:absolute;left:0;top:6px;
-    width:6px;height:6px;border-radius:50%;
-    background:var(--magenta-bright);
-    opacity:0.55;
-  }
-  .algo-panel .ap-step em{font-style:normal;font-weight:600;color:var(--magenta-bright)}
-
   /* Tooltip */
   .node-tooltip{
     background:rgba(12,12,14,0.96)!important;
@@ -234,14 +174,166 @@
   .toolbar button.toolbar-subaxis:hover{background:rgba(233,30,140,0.12)}
   .toolbar .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
-  .left-panel{
+  .axis-dock{
     position:fixed;top:100px;left:336px;
     width:280px;max-height:calc(100vh - 240px);
     z-index:1000;
-    display:flex;flex-direction:column;gap:10px;
     pointer-events:none;
   }
-  .left-panel>*{pointer-events:auto}
+  .axis-dock>*{pointer-events:auto}
+
+  .selection-dock{
+    position:fixed;bottom:28px;left:28px;
+    width:300px;max-height:min(48vh,440px);
+    min-height:140px;
+    z-index:1003;
+    display:none;flex-direction:column;
+    pointer-events:none;
+  }
+  .selection-dock.visible{display:flex}
+  .selection-dock>*{pointer-events:auto}
+  .sel-landhint{
+    font-size:9px;color:var(--text-dim);line-height:1.45;
+    padding:0 16px 8px;margin:0;
+    border-bottom:1px solid var(--border-subtle);
+  }
+  .sel-landhint code{font-size:8px;color:var(--text-secondary)}
+
+  .panel-fold-head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:12px 14px;cursor:pointer;user-select:none;
+    border-bottom:1px solid var(--border-subtle);
+  }
+  .panel-fold-head .panel-title{margin:0;padding:0;border:none}
+  .panel-fold-chevron{
+    font-size:10px;color:var(--text-dim);transition:transform 0.2s ease;
+    flex-shrink:0;width:20px;text-align:center;
+  }
+  .panel-card.fold-collapsed .panel-fold-chevron{transform:rotate(-90deg)}
+  .panel-card.fold-collapsed .panel-fold-body{display:none}
+
+  .map-site-card-wrap{
+    background:transparent!important;border:none!important;
+    pointer-events:none;
+  }
+  .map-site-card{
+    pointer-events:auto;
+    min-width:168px;max-width:220px;
+    width:max-content;
+    background:var(--bg-panel);
+    border:1px solid rgba(233,30,140,0.35);
+    border-radius:10px;
+    padding:6px 8px 8px;
+    box-shadow:0 8px 28px rgba(0,0,0,0.45);
+    backdrop-filter:blur(12px);
+  }
+  .map-site-card.msc-active{
+    border-color:var(--magenta-bright);
+    box-shadow:0 0 0 1px rgba(233,30,140,0.28),0 8px 28px rgba(0,0,0,0.45);
+  }
+  .map-site-card.msc-collapsed{
+    min-width:0;max-width:120px;padding:2px 4px 3px;
+    border-radius:6px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.38);
+  }
+  .map-site-card.msc-collapsed.msc-active{
+    box-shadow:0 0 0 1px rgba(233,30,140,0.35),0 2px 10px rgba(0,0,0,0.4);
+  }
+  .msc-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px}
+  .map-site-card.msc-collapsed .msc-head{margin-bottom:0;gap:3px}
+  .msc-name{
+    font-size:11px;font-weight:700;color:var(--text-primary);
+    line-height:1.2;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .map-site-card.msc-collapsed .msc-name{
+    font-size:8.5px;font-weight:600;line-height:1.15;
+    max-width:86px;
+  }
+  .msc-fold{
+    flex-shrink:0;width:22px;height:22px;border:none;border-radius:4px;
+    background:rgba(255,255,255,0.06);color:var(--magenta-bright);
+    cursor:pointer;font-size:11px;line-height:1;display:flex;
+    align-items:center;justify-content:center;padding:0;
+  }
+  .map-site-card.msc-collapsed .msc-fold{
+    width:15px;height:15px;border-radius:3px;font-size:8px;
+  }
+  .msc-fold:hover{background:rgba(233,30,140,0.2)}
+  .msc-body{font-size:10px;color:var(--text-secondary);line-height:1.45}
+  .msc-row.msc-muted{color:var(--text-dim);font-size:9px;margin-top:2px}
+  .map-site-card.msc-expanded{min-width:252px;max-width:288px;padding:7px 9px 9px}
+  .msc-body-expanded{margin-top:4px}
+  .msc-body-expanded .msc-sum{
+    font-size:10px;color:var(--text-secondary);margin-bottom:8px;padding-bottom:6px;
+    border-bottom:1px solid var(--border-subtle);line-height:1.4;
+  }
+  .msc-sec{
+    font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--cyan-soft);
+    margin:8px 0 4px;font-weight:500;
+  }
+  .msc-body-expanded .msc-sec:first-of-type{margin-top:2px}
+  .msc-bar{display:flex;width:100%;height:5px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,0.06);margin-bottom:6px}
+  .msc-bar > span{min-width:3px;height:100%}
+  .msc-lu-list{max-height:92px;overflow-y:auto;padding-right:2px}
+  .msc-lu-row{
+    font-size:9px;color:var(--text-secondary);display:flex;align-items:center;gap:5px;
+    margin-bottom:3px;line-height:1.3;
+  }
+  .msc-lu-dot{width:6px;height:6px;border-radius:2px;flex-shrink:0}
+  .msc-lu-n{color:var(--magenta-bright);font-weight:600;margin-left:auto;flex-shrink:0}
+  .msc-poi-sum{
+    font-size:9px;color:var(--amber-soft);line-height:1.45;margin-bottom:6px;
+    word-break:break-word;
+  }
+  .msc-poi-scroll{max-height:128px;overflow-y:auto;padding-right:3px}
+  .msc-poi-row{
+    font-size:9px;margin-bottom:3px;line-height:1.35;
+    display:flex;gap:5px;flex-wrap:wrap;align-items:baseline;
+  }
+  .msc-poi-cat{color:var(--text-dim);flex-shrink:0;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .msc-poi-nm{color:var(--text-primary);word-break:break-word}
+  .msc-muted2{font-size:9px;color:var(--text-dim);font-style:italic}
+  .msc-blurb-top-wrap{
+    margin-bottom:8px;padding-bottom:8px;
+    border-bottom:1px solid var(--border-subtle);
+  }
+  .msc-blurb-top-title{
+    font-size:12px;font-weight:700;color:#fff;line-height:1.35;
+    letter-spacing:0.02em;margin-bottom:6px;
+  }
+  .msc-blurb-edit{
+    min-height:34px;max-height:52px;overflow-y:auto;
+    font-size:9px;line-height:1.4;color:var(--text-secondary);
+    padding:5px 6px;border-radius:5px;
+    border:1px dashed rgba(233,30,140,0.28);
+    background:rgba(255,255,255,0.03);
+    outline:none;cursor:text;
+  }
+  .msc-blurb-edit.msc-blurb-edit-top{
+    min-height:38px;max-height:56px;
+    font-size:12px;font-weight:700;line-height:1.45;color:#fff;
+    padding:6px 8px;border-radius:6px;
+    border:1px dashed rgba(255,255,255,0.22);
+    background:rgba(255,255,255,0.06);
+  }
+  .msc-blurb-edit:focus{border-color:rgba(233,30,140,0.5);background:rgba(233,30,140,0.06)}
+  .msc-blurb-edit.msc-blurb-edit-top:focus{
+    border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.1);
+  }
+  .msc-blurb-edit:empty::before{
+    content:attr(data-placeholder);
+    color:var(--text-dim);font-style:italic;
+  }
+  .msc-blurb-edit.msc-blurb-edit-top:empty::before{
+    color:rgba(255,255,255,0.42);font-style:italic;font-weight:500;
+  }
+
+  .selection-card{
+    display:flex;flex-direction:column;
+    flex:1;min-height:0;overflow:hidden;
+  }
+  .selection-card .selection-list{flex:1;min-height:72px}
 
   .panel-card{
     background:var(--bg-panel);
@@ -251,8 +343,8 @@
     overflow:hidden;
   }
 
-  .axis-panel{padding:14px 16px;display:none;flex-shrink:0}
-  .axis-panel.visible{display:block}
+  .axis-panel{display:none;flex-shrink:0;flex-direction:column}
+  .axis-panel.visible{display:flex}
   .panel-title{
     font-size:9px;letter-spacing:2.5px;text-transform:uppercase;
     color:var(--magenta-soft);font-weight:500;margin-bottom:10px;
@@ -298,9 +390,6 @@
     line-height:1.45;
   }
 
-  .selection-panel{flex:1;min-height:0;overflow:hidden;display:none;flex-direction:column}
-  .selection-panel.visible{display:flex}
-  .selection-panel .panel-title{padding:14px 16px 0}
   .selection-list{
     flex:1;overflow-y:auto;padding:8px 16px 12px;
     display:flex;flex-direction:column;gap:6px;
@@ -324,16 +413,6 @@
   .sel-stat{font-size:10px;color:var(--text-dim)}
   .sel-stat span{color:var(--magenta-bright);font-weight:600}
   .sel-empty{text-align:center;padding:20px 0;font-size:10px;color:var(--text-dim);font-style:italic}
-  .sel-detail{
-    padding:10px 16px 12px;
-    border-top:1px solid var(--border-subtle);
-    display:none;
-  }
-  .sel-detail.visible{display:block}
-  .sel-detail-title{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--magenta-soft);margin-bottom:8px}
-  .sel-detail-row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px}
-  .sel-detail-row .lbl{color:var(--text-secondary)}
-  .sel-detail-row .val{color:var(--text-primary);font-weight:500}
   .sel-poi-tag{
     display:inline-block;padding:2px 7px;margin:2px 3px 2px 0;
     border-radius:4px;font-size:9px;
@@ -344,7 +423,7 @@
   .sel-landuse-seg{height:100%}
 
   .draw-hint{
-    position:fixed;bottom:26px;left:50%;transform:translateX(-50%);
+    position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
     background:var(--bg-panel);border:1px solid var(--border-subtle);
     border-radius:10px;padding:9px 18px;
     z-index:1001;backdrop-filter:blur(14px);
@@ -440,7 +519,7 @@
 
 <div class="panel-header">
   <div class="tag">Prototype ③ — Field System</div>
-  <h1>场域系统选址 · 触媒 → 廊道 → 边界</h1>
+  <h1>人机触媒-认知轴线-场域系统</h1>
   <div class="sub">场域总量固定 <strong>10 ha</strong>，按簇 <strong>Σpriority</strong> 比例分配面积；每块为<strong>实线核心圆 + 虚线缓冲圆</strong>（较大者为缓冲）。<strong>簇跨度超标</strong>时子聚类分裂后再取 Top-N。统计仍为全量。</div>
 </div>
 
@@ -475,22 +554,6 @@
   </div>
 </div>
 
-<!-- 左下：新选地块汇总（场域算法统计已移除） -->
-<div class="stats-panel">
-  <div class="st-title">新选地块统计</div>
-  <div id="parcel-stats-body"></div>
-</div>
-
-<!-- Algorithm -->
-<div class="algo-panel">
-  <div class="ap-title">选址算法 · 触媒 → 廊道 → 边界</div>
-  <div class="ap-step"><em>Step 1</em> 节点分类：激活 / 瓶颈 / 临界（瓶颈接缝与 Step 2 共用 <code>catalyst-seam-clusters.js</code>）</div>
-  <div class="ap-step"><em>Step 2</em> <strong>触媒</strong>：激活∪临界边中点 DBSCAN（ε=180m 起可调, minPts=3；与场域块同源）</div>
-  <div class="ap-step"><em>Step 3</em> <strong>触媒</strong>：簇内 ≥5 点且<strong>最大点距 &gt; 520m</strong> → 更紧 ε 子 DBSCAN，至多 3 轮分裂</div>
-  <div class="ap-step"><em>Step 4</em> <strong>触媒</strong>：按簇 Σpriority 排序取 Top-<em>6</em></div>
-  <div class="ap-step"><em>Step 5</em> <strong>边界</strong>：质心双圆（实线核心 / 虚线缓冲）；r<sub>叙事</sub>=√(分配面积/π)，r<sub>点云</sub>=最远触媒距+缓冲；取 min/max 得内外圆</div>
-</div>
-
 <div class="toolbar">
   <button type="button" id="btn-browse" class="mode-tab active" onclick="setMode('browse')">
     <span class="dot" style="background:rgba(255,255,255,0.4)"></span>浏览
@@ -499,30 +562,44 @@
     <span class="dot" style="background:var(--magenta-bright)"></span>轴线绘制
   </button>
   <button type="button" id="btn-select" class="mode-tab" onclick="setMode('select')">
-    <span class="dot" style="background:var(--magenta)"></span>选址
+    <span class="dot" style="background:var(--magenta)"></span>激活区
   </button>
   <button type="button" id="btn-add-subaxis" class="toolbar-subaxis" onclick="addSubAxis()" title="添加一条虚线副轴（自动进入轴线模式）">
     <span class="dot" style="background:transparent;border:1px dashed #ff4dad;width:6px;height:6px"></span>新增副轴
   </button>
 </div>
 
-<div class="left-panel">
+<div class="axis-dock">
   <div class="panel-card axis-panel" id="axisPanel">
-    <div class="panel-title">轴线定义 · Axis Lines</div>
-    <div class="axis-list" id="axisList"></div>
-    <div class="axis-hint">
-      点击轴线名称进入绘制 → 在地图上逐点点击 → 按 <b>Enter</b> 完成 / <b>Esc</b> 取消<br>
-      主轴均为玫红：横轴实线、纵轴虚线；<b>新增副轴</b> 为玫红虚线副轴
+    <div class="panel-fold-head" role="button" tabindex="0" onclick="togglePanelFold('axisPanel')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePanelFold('axisPanel');}">
+      <div class="panel-title">轴线定义 · Axis Lines</div>
+      <span class="panel-fold-chevron" aria-hidden="true">▼</span>
+    </div>
+    <div class="panel-fold-body">
+      <div style="padding:0 16px 8px">
+        <div class="axis-list" id="axisList"></div>
+        <div class="axis-hint">
+          点击轴线名称进入绘制 → 在地图上逐点点击 → 按 <b>Enter</b> 完成 / <b>Esc</b> 取消<br>
+          主轴均为玫红<strong>实线</strong>（无顶点圆点）。<strong>商业 / 体育认知轴</strong>：轴名从<strong>最左端点</strong>向<strong>西</strong>引出，卡片整体落在研究区外；<strong>社会认知轴</strong>：从最右端点向<strong>东</strong>引出至区外。<b>新增副轴</b> 为玫红<strong>虚线</strong>，无轴名标签<br>
+          用地数据加载后，在<strong>研究区</strong>内显示全部<strong>OSM 用地</strong>填色（按标签类型配色）；POI 不参与地图打点，仍参与激活区统计。<br>
+          每个激活区在地图质心处有常驻卡片，可折叠；轴线与激活区会<strong>自动保存</strong>在本浏览器。
+        </div>
+      </div>
     </div>
   </div>
-  <div class="panel-card selection-panel" id="selectionPanel">
-    <div class="panel-title" style="padding:14px 16px 0">选址管理 · Site Selection</div>
-    <div class="selection-list" id="selectionList">
-      <div class="sel-empty" id="selEmpty">暂无选址 — 在地图上点击绘制多边形</div>
+</div>
+
+<div class="selection-dock visible" id="selectionDock">
+  <div class="panel-card selection-card" id="selectionPanelCard">
+    <div class="panel-fold-head" role="button" tabindex="0" onclick="togglePanelFold('selectionPanelCard')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePanelFold('selectionPanelCard');}">
+      <div class="panel-title" style="margin:0">激活区列表</div>
+      <span class="panel-fold-chevron" aria-hidden="true">▼</span>
     </div>
-    <div class="sel-detail" id="selDetail">
-      <div class="sel-detail-title">选址详情</div>
-      <div id="selDetailContent"></div>
+    <div class="panel-fold-body" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <p class="sel-landhint">用地来自 <strong>OSM</strong>（Overpass）：含 <strong>landuse / natural / leisure</strong> 等面要素与 <strong>multipolygon</strong> 关系（成员 way 一并展开），抓取范围为<strong>研究区 ∪ 所有激活区</strong>外扩后的 bbox。激活区统计遍历该全量数据中与多边形<strong>接触</strong>的要素；地图填色为研究区内全部用地。展开<strong>地图卡片</strong>可查看明细、POI 与一句话说明。</p>
+      <div class="selection-list" id="selectionList">
+        <div class="sel-empty" id="selEmpty">暂无激活区 — 在「激活区」模式下点击地图绘制多边形</div>
+      </div>
     </div>
   </div>
 </div>
@@ -571,6 +648,51 @@ map.createPane('dataPane');
 map.getPane('dataPane').style.zIndex = 550;
 map.createPane('userPane');
 map.getPane('userPane').style.zIndex = 620;
+map.createPane('selCardPane');
+map.getPane('selCardPane').style.zIndex = 640;
+map.getPane('selCardPane').style.pointerEvents = 'none';
+
+map.getContainer().addEventListener('mousedown', (ev) => {
+  if (ev.target.closest('.msc-blurb-edit')) ev.stopPropagation();
+}, true);
+map.getContainer().addEventListener('click', (ev) => {
+  if (ev.target.closest('.msc-blurb-edit')) {
+    ev.stopPropagation();
+    return;
+  }
+  const btn = ev.target.closest('.msc-fold');
+  if (!btn || !map.getContainer().contains(btn)) return;
+  const id = btn.getAttribute('data-sel-id');
+  if (!id) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  const sel = selections.find((x) => x.id === id);
+  if (!sel) return;
+  sel.mapCardCollapsed = !sel.mapCardCollapsed;
+  ensureSelectionMapCard(sel);
+  persistMapDrafts();
+});
+map.getContainer().addEventListener('input', (ev) => {
+  const el = ev.target.closest('.msc-blurb-edit');
+  if (!el || !map.getContainer().contains(el)) return;
+  const id = el.getAttribute('data-sel-id');
+  if (!id) return;
+  const sel = selections.find((x) => x.id === id);
+  if (!sel) return;
+  sel.blurb = el.textContent;
+  persistMapDrafts();
+});
+map.getContainer().addEventListener('blur', (ev) => {
+  const el = ev.target.closest('.msc-blurb-edit');
+  if (!el || !map.getContainer().contains(el)) return;
+  const id = el.getAttribute('data-sel-id');
+  if (!id) return;
+  const sel = selections.find((x) => x.id === id);
+  if (!sel) return;
+  sel.blurb = el.textContent.trim();
+  if (el.textContent !== sel.blurb) el.textContent = sel.blurb;
+  persistMapDrafts();
+}, true);
 
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   maxZoom: 19,
@@ -581,7 +703,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
 
 const STUDY_GEOJSON_URL = 'data/daxujiahui-four-streets-union.geojson';
 const boundaryLayerGroup = L.layerGroup({ pane: 'boundaryPane' }).addTo(map);
-/** 研究区外轮廓环 [[lat,lng],…]，供选址统计裁剪；与地图边界同源 */
+/** 研究区外轮廓环 [[lat,lng],…]，供 POI 等统计裁剪；与地图边界同源 */
 let studyAreaRings = null;
 
 function pickStudyGeometry(j) {
@@ -644,7 +766,7 @@ function renderStudyBoundaryFromData(j) {
 }
 
 function loadDefaultStudyBoundary() {
-  fetch(STUDY_GEOJSON_URL, { cache: 'no-store' })
+  return fetch(STUDY_GEOJSON_URL, { cache: 'no-store' })
     .then((r) => (r.ok ? r.json() : null))
     .then((j) => {
       if (!j) return;
@@ -653,7 +775,6 @@ function loadDefaultStudyBoundary() {
     })
     .catch(() => {});
 }
-loadDefaultStudyBoundary();
 
 // ============================================================
 //  JENKS（与 map_intervention_nodes 一致；大样本退回三分位）
@@ -1063,7 +1184,7 @@ const MAX_TOTAL_FIELD_AREA_M2 = 100000;
 const MAX_FIELD_SYSTEMS = 6;
 
 /**
- * 达标分裂：单簇触媒点「跨度」过大时再拆选址。
+ * 达标分裂：单簇触媒点「跨度」过大时再拆区。
  * 跨度 = 簇内任意两点平面距离的最大值（米）。
  */
 const SPLIT_MAX_CLUSTER_DIAMETER_M = 520;
@@ -1425,20 +1546,26 @@ loadEdges().then((edges) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// 选址 / 轴线 / 数据层（与场域底图共用 map）
+// 激活区 / 轴线 / 数据层（与场域底图共用 map）
 // ═══════════════════════════════════════════════════════════
 
 let currentMode = 'browse';
 let landuseLayers = null;
-let poiLayers = null;
 let landuseData = null;
+/** 最近一次 Overpass 用地查询所用的经纬度 bbox；用于判断是否需要扩大范围重拉 */
+let landuseOverpassBboxLast = null;
 let poiData = null;
 
-/** 由 data/lan_use.shp 裁剪生成，见 npm run clip:lan-use */
-const STATIC_LANDUSE_URL = 'data/lan_use_daxujiahui.geojson';
-/** data/poi_data 汇总 GeoJSON */
+/** OpenStreetMap Overpass（多镜像依次尝试） */
+const OVERPASS_INTERPRETER_URLS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter'
+];
+/** 研究区未加载时的默认 bbox（大徐家汇一带） */
+const FALLBACK_LANDUSE_BBOX = { south: 31.155, west: 121.395, north: 31.235, east: 121.495 };
+/** data/poi_data 汇总 GeoJSON（仅用于激活区统计，不在地图上打点） */
 const STATIC_POI_URL = 'data/poi_data/poi_all.geojson';
-
 const AXIS_MAGENTA = '#ff4dad';
 
 const axes = [
@@ -1462,6 +1589,8 @@ let tempSelLayer = null;
 let tempSelMarkers = null;
 let activeSelectionId = null;
 
+const LOCAL_STORAGE_KEY = 'xujiahui-site-selection-drafts-v1';
+
 function getAllAxesList() {
   return axes.concat(subAxes);
 }
@@ -1479,10 +1608,203 @@ function axisStrokeStyle(axis) {
   if (axis.type === 'sub') {
     return { color: AXIS_MAGENTA, dashArray: '10,6', weight: 2.5 };
   }
-  if (axis.type === 'h') {
-    return { color: AXIS_MAGENTA, dashArray: null, weight: 3 };
+  return { color: AXIS_MAGENTA, dashArray: null, weight: 3 };
+}
+
+function applyAxisGeometryToMap(axis) {
+  if (axis.layer) {
+    map.removeLayer(axis.layer);
+    axis.layer = null;
   }
-  return { color: AXIS_MAGENTA, dashArray: '8,5', weight: 3 };
+  if (axis.markersLayer) {
+    map.removeLayer(axis.markersLayer);
+    axis.markersLayer = null;
+  }
+  if (!axis.points || axis.points.length < 2) return;
+  const st = axisStrokeStyle(axis);
+  axis.layer = L.polyline(axis.points, {
+    pane: 'userPane',
+    color: st.color,
+    weight: st.weight,
+    opacity: 0.88,
+    dashArray: st.dashArray
+  }).addTo(map);
+  axis.markersLayer = L.layerGroup({ pane: 'userPane' }).addTo(map);
+  if (axis.type !== 'sub') {
+    const iconW = 152;
+    const iconH = 52;
+    let startLat;
+    let startLng;
+    let labLat;
+    let labLng;
+    if (axis.id === 'H1' || axis.id === 'H2') {
+      [startLat, startLng] = axisPolylineLeftmostEndpoint(axis.points);
+      [labLat, labLng] = findAxisLabelAnchorWestward(startLat, startLng);
+      [labLat, labLng] = nudgeAxisLabelCardOutsideStudy(labLat, labLng, iconW, iconH, -1);
+    } else {
+      [startLat, startLng] = axisPolylineRightmostEndpoint(axis.points);
+      [labLat, labLng] = findAxisLabelAnchorEastward(startLat, startLng);
+      [labLat, labLng] = nudgeAxisLabelCardOutsideStudy(labLat, labLng, iconW, iconH, 1);
+    }
+    L.polyline(
+      [
+        [startLat, startLng],
+        [labLat, labLng]
+      ],
+      {
+        pane: 'userPane',
+        color: 'rgba(173,20,87,0.88)',
+        weight: 1.5,
+        dashArray: '6,5',
+        opacity: 0.82
+      }
+    ).addTo(axis.markersLayer);
+    const nameHtml = escapeHtml(axis.label || axis.id);
+    L.marker([labLat, labLng], {
+      pane: 'userPane',
+      zIndexOffset: 450,
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="background:#ad1457;color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:3px;max-width:140px;line-height:1.25;white-space:normal;word-break:break-all;border:1px solid rgba(255,255,255,0.35);box-shadow:0 2px 10px rgba(0,0,0,0.35)">${nameHtml}</div>`,
+        iconSize: [iconW, iconH],
+        iconAnchor: [iconW / 2, iconH]
+      })
+    }).addTo(axis.markersLayer);
+  }
+}
+
+function rebuildSelectionFromSaved(s) {
+  const pts = s.points.map((p) => [p[0], p[1]]);
+  const coords = pts.map((p) => [p[1], p[0]]);
+  coords.push(coords[0]);
+  const polygon = L.polygon(pts, {
+    pane: 'userPane',
+    color: '#e91e8c',
+    weight: 2,
+    opacity: 0.85,
+    fillColor: '#e91e8c',
+    fillOpacity: 0.15
+  }).addTo(map);
+  const area = calcPolygonArea(pts);
+  const analysis = analyzeSelection(pts);
+  const sel = {
+    id: s.id,
+    name: s.name,
+    points: pts,
+    coordsGeoJSON: coords,
+    layer: polygon,
+    area,
+    analysis,
+    mapCardCollapsed: !!s.mapCardCollapsed,
+    blurb: s.blurb != null ? String(s.blurb) : '',
+    cardMarker: null
+  };
+  polygon.on('click', () => {
+    if (currentMode === 'select') {
+      activeSelectionId = sel.id;
+      sel.mapCardCollapsed = false;
+      renderSelectionList();
+      refreshAllSelectionMapCards();
+      persistMapDrafts();
+    }
+  });
+  ensureSelectionMapCard(sel);
+  return sel;
+}
+
+function persistMapDrafts() {
+  try {
+    const payload = {
+      version: 1,
+      axes: axes.map((a) => ({ id: a.id, points: a.points.map((p) => [p[0], p[1]]) })),
+      subAxes: subAxes.map((a) => ({
+        id: a.id,
+        label: a.label,
+        points: a.points.map((p) => [p[0], p[1]])
+      })),
+      subAxisCounter,
+      selections: selections.map((s) => ({
+        id: s.id,
+        name: s.name,
+        points: s.points.map((p) => [p[0], p[1]]),
+        mapCardCollapsed: !!s.mapCardCollapsed,
+        blurb: s.blurb != null ? String(s.blurb) : ''
+      })),
+      selectionIdCounter,
+      activeSelectionId
+    };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.warn('本地保存失败（可能超出浏览器存储配额）', e);
+  }
+}
+
+function restoreMapDrafts() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data || data.version !== 1) return;
+
+    if (Array.isArray(data.axes)) {
+      data.axes.forEach((snap) => {
+        const ax = axes.find((a) => a.id === snap.id);
+        if (!ax || !snap.points) return;
+        ax.points = snap.points.map((p) => [p[0], p[1]]);
+        if (ax.points.length >= 2) applyAxisGeometryToMap(ax);
+      });
+    }
+
+    if (Array.isArray(data.subAxes)) {
+      subAxes = [];
+      let maxSubNum = 0;
+      data.subAxes.forEach((snap) => {
+        const m = /^S(\d+)$/.exec(snap.id || '');
+        if (m) maxSubNum = Math.max(maxSubNum, +m[1]);
+        const axis = {
+          id: snap.id,
+          label: snap.label || snap.id,
+          type: 'sub',
+          points: (snap.points || []).map((p) => [p[0], p[1]]),
+          layer: null,
+          markersLayer: null
+        };
+        if (axis.points.length >= 2) applyAxisGeometryToMap(axis);
+        subAxes.push(axis);
+      });
+      subAxisCounter = Math.max(data.subAxisCounter || 0, maxSubNum);
+    }
+
+    let maxSelNum = 0;
+    if (Array.isArray(data.selections)) {
+      selections = [];
+      data.selections.forEach((snap) => {
+        if (!snap.points || snap.points.length < 3) return;
+        const m = /^S(\d+)$/.exec(snap.id || '');
+        if (m) maxSelNum = Math.max(maxSelNum, +m[1]);
+        const sel = rebuildSelectionFromSaved({
+          id: snap.id,
+          name: snap.name || snap.id,
+          points: snap.points.map((p) => [p[0], p[1]]),
+          mapCardCollapsed: snap.mapCardCollapsed,
+          blurb: snap.blurb
+        });
+        selections.push(sel);
+      });
+      selectionIdCounter = Math.max(data.selectionIdCounter || 0, maxSelNum);
+      recomputeActivationDisplayNames();
+    } else {
+      selectionIdCounter = data.selectionIdCounter || selectionIdCounter;
+    }
+
+    activeSelectionId = data.activeSelectionId || null;
+    if (activeSelectionId && !selections.some((s) => s.id === activeSelectionId)) {
+      activeSelectionId = null;
+    }
+    refreshAllSelectionMapCards();
+  } catch (e) {
+    console.warn('本地草稿恢复失败', e);
+  }
 }
 
 function addSubAxis() {
@@ -1498,6 +1820,7 @@ function addSubAxis() {
     markersLayer: null
   });
   renderAxisList();
+  persistMapDrafts();
 }
 
 function setMode(mode) {
@@ -1510,7 +1833,7 @@ function setMode(mode) {
   const mapEl = document.getElementById('map');
   mapEl.className = `mode-${mode}`;
   document.getElementById('axisPanel').classList.toggle('visible', mode === 'axis');
-  document.getElementById('selectionPanel').classList.toggle('visible', mode === 'select');
+  document.getElementById('selectionDock').classList.add('visible');
   if (mode === 'axis') renderAxisList();
   if (mode === 'select') renderSelectionList();
   updateDrawHint();
@@ -1574,37 +1897,7 @@ function finishAxisDrawing() {
   const axis = findAxisById(drawingAxis);
   if (!axis) return;
   axis.points = [...tempAxisPoints];
-  if (axis.layer) map.removeLayer(axis.layer);
-  if (axis.markersLayer) map.removeLayer(axis.markersLayer);
-  const st = axisStrokeStyle(axis);
-  axis.layer = L.polyline(axis.points, {
-    pane: 'userPane',
-    color: st.color,
-    weight: st.weight,
-    opacity: 0.88,
-    dashArray: st.dashArray
-  }).addTo(map);
-  axis.markersLayer = L.layerGroup({ pane: 'userPane' }).addTo(map);
-  axis.points.forEach((p) => {
-    L.circleMarker(p, {
-      pane: 'userPane',
-      radius: 4,
-      fillColor: AXIS_MAGENTA,
-      fillOpacity: 1,
-      color: '#fff',
-      weight: 1,
-      opacity: 0.65
-    }).addTo(axis.markersLayer);
-  });
-  const mid = axis.points[Math.floor(axis.points.length / 2)];
-  L.marker(mid, {
-    pane: 'userPane',
-    icon: L.divIcon({
-      className: '',
-      html: `<div style="background:#ad1457;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;border:1px solid rgba(255,255,255,0.35)">${axis.id}</div>`,
-      iconAnchor: [-8, 10]
-    })
-  }).addTo(axis.markersLayer);
+  applyAxisGeometryToMap(axis);
   drawingAxis = null;
   tempAxisPoints = [];
   if (tempAxisLayer) {
@@ -1617,6 +1910,8 @@ function finishAxisDrawing() {
   }
   renderAxisList();
   updateDrawHint();
+  persistMapDrafts();
+  updateLanduseLayerNearAxes();
 }
 
 function clearAxis(axisId) {
@@ -1633,20 +1928,17 @@ function clearAxis(axisId) {
     }
     subAxes.splice(si, 1);
     renderAxisList();
+    persistMapDrafts();
+    updateLanduseLayerNearAxes();
     return;
   }
   const axis = axes.find((a) => a.id === axisId);
   if (!axis) return;
   axis.points = [];
-  if (axis.layer) {
-    map.removeLayer(axis.layer);
-    axis.layer = null;
-  }
-  if (axis.markersLayer) {
-    map.removeLayer(axis.markersLayer);
-    axis.markersLayer = null;
-  }
+  applyAxisGeometryToMap(axis);
   renderAxisList();
+  persistMapDrafts();
+  updateLanduseLayerNearAxes();
 }
 
 function updateTempAxisLine() {
@@ -1708,23 +2000,28 @@ function finishSelectionDrawing() {
   const analysis = analyzeSelection(tempSelPoints);
   const sel = {
     id,
-    name: `选址 ${selectionIdCounter}`,
+    name: '激活区',
     points: [...tempSelPoints],
     coordsGeoJSON: coords,
     layer: polygon,
     area,
-    analysis
+    analysis,
+    mapCardCollapsed: false,
+    blurb: '',
+    cardMarker: null
   };
-  polygon.on('mouseover', (e) => showSelectionCard(sel, e));
-  polygon.on('mouseout', () => hideInfoCard());
   polygon.on('click', () => {
     if (currentMode === 'select') {
       activeSelectionId = sel.id;
+      sel.mapCardCollapsed = false;
       renderSelectionList();
-      showSelectionDetail(sel);
+      refreshAllSelectionMapCards();
+      persistMapDrafts();
     }
   });
   selections.push(sel);
+  recomputeActivationDisplayNames();
+  ensureSelectionMapCard(sel);
   drawingSelection = false;
   tempSelPoints = [];
   if (tempSelLayer) {
@@ -1736,21 +2033,26 @@ function finishSelectionDrawing() {
     tempSelMarkers = null;
   }
   renderSelectionList();
-  showSelectionDetail(sel);
   activeSelectionId = sel.id;
+  sel.mapCardCollapsed = false;
+  refreshAllSelectionMapCards();
   updateDrawHint();
+  persistMapDrafts();
+  void refetchLanduseIfSelectionsExceedCachedBbox();
 }
 
 function deleteSelection(id) {
   const idx = selections.findIndex((s) => s.id === id);
   if (idx === -1) return;
+  removeSelectionMapCard(selections[idx]);
   map.removeLayer(selections[idx].layer);
   selections.splice(idx, 1);
   if (activeSelectionId === id) {
     activeSelectionId = null;
-    document.getElementById('selDetail').classList.remove('visible');
   }
+  recomputeActivationDisplayNames();
   renderSelectionList();
+  persistMapDrafts();
 }
 
 function updateTempSelPoly() {
@@ -1777,42 +2079,28 @@ function updateTempSelPoly() {
   }
 }
 
-function updateParcelStatsPanel() {
-  const host = document.getElementById('parcel-stats-body');
-  if (!host) return;
-  if (selections.length === 0) {
-    host.innerHTML =
-      '<div class="parcel-stats-empty">在「选址」模式下绘制多边形后，此处按 <code>data/lan_use.shp</code> 裁剪的用地（<code>lan_use_daxujiahui.geojson</code>）与 <code>data/poi_data/poi_all.geojson</code> 汇总统计。</div>';
-    return;
-  }
-  let totalM2 = 0;
-  let totalPoi = 0;
-  selections.forEach((s) => {
-    totalM2 += s.area;
-    totalPoi += s.analysis.poiCount || 0;
+function activationMaxLatitude(sel) {
+  let m = -Infinity;
+  (sel.points || []).forEach(([lat]) => {
+    if (lat > m) m = lat;
   });
-  const per = selections
-    .map(
-      (s) =>
-        `<div class="st-row"><span class="st-lbl">${s.name}</span><span class="st-val c-total">${formatArea(s.area)}${
-          s.analysis.poiCount ? ` · ${s.analysis.poiCount} POI` : ''
-        }</span></div>`
-    )
-    .join('');
-  host.innerHTML = `
-    <div class="st-row"><span class="st-lbl">地块数</span><span class="st-val c-total">${selections.length}</span></div>
-    <div class="st-row"><span class="st-lbl">面积合计</span><span class="st-val c-total">${formatArea(totalM2)}</span></div>
-    <div class="st-row"><span class="st-lbl">POI 合计</span><span class="st-val" style="color:#f0f0f0">${totalPoi}</span></div>
-    <hr class="lg-divider" style="margin:10px 0">
-    ${per}`;
+  return m;
+}
+
+function recomputeActivationDisplayNames() {
+  const order = selections
+    .map((s, idx) => ({ s, idx, north: activationMaxLatitude(s) }))
+    .sort((a, b) => b.north - a.north || a.idx - b.idx);
+  order.forEach((item, rank) => {
+    item.s.name = `激活区 ${rank + 1}`;
+  });
 }
 
 function renderSelectionList() {
   const el = document.getElementById('selectionList');
   if (selections.length === 0) {
-    el.innerHTML = '<div class="sel-empty">暂无选址 — 在地图上点击绘制多边形</div>';
-    document.getElementById('selDetail').classList.remove('visible');
-    updateParcelStatsPanel();
+    el.innerHTML = '<div class="sel-empty">暂无激活区 — 在「激活区」模式下点击地图绘制多边形</div>';
+    refreshAllSelectionMapCards();
     return;
   }
   el.innerHTML = selections.map((s) => {
@@ -1830,73 +2118,19 @@ function renderSelectionList() {
         </div>
       </div>`;
   }).join('');
-  updateParcelStatsPanel();
+  refreshAllSelectionMapCards();
 }
 
 function selectSelection(id) {
   activeSelectionId = id;
   const sel = selections.find((s) => s.id === id);
+  if (sel) sel.mapCardCollapsed = false;
   renderSelectionList();
   if (sel) {
-    showSelectionDetail(sel);
     map.fitBounds(sel.layer.getBounds(), { padding: [60, 60] });
   }
-}
-
-function showSelectionDetail(sel) {
-  const el = document.getElementById('selDetail');
-  const content = document.getElementById('selDetailContent');
-  el.classList.add('visible');
-  let landuseHTML = '';
-  if (sel.analysis.landuse && sel.analysis.landuse.length > 0) {
-    const total = sel.analysis.landuse.reduce((s, l) => s + l.count, 0);
-    const colors = ['#e91e8c', '#00d4ff', '#ffb300', '#4ceb9a', '#ff6b9d', '#9b59b6', '#e67e22'];
-    landuseHTML = `
-      <div class="sel-landuse-bar">
-        ${sel.analysis.landuse.map((l, i) => `<div class="sel-landuse-seg" style="width:${((l.count / total) * 100).toFixed(1)}%;background:${colors[i % colors.length]}"></div>`).join('')}
-      </div>
-      <div style="margin-top:6px">
-        ${sel.analysis.landuse.map((l, i) => `<div style="font-size:10px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="width:8px;height:8px;border-radius:2px;background:${colors[i % colors.length]};flex-shrink:0"></span>${l.type} (${l.count})</div>`).join('')}
-      </div>`;
-  } else {
-    landuseHTML = '<div style="font-size:10px;color:var(--text-dim);font-style:italic">未导入用地数据</div>';
-  }
-  let poiHTML = '';
-  if (sel.analysis.pois && sel.analysis.pois.length > 0) {
-    poiHTML = `<div class="sel-poi-list">${sel.analysis.pois.slice(0, 20).map((p) => `<span class="sel-poi-tag">${p.category ? p.category + '·' : ''}${p.name}</span>`).join('')}${sel.analysis.pois.length > 20 ? `<span class="sel-poi-tag" style="opacity:0.5">+${sel.analysis.pois.length - 20}</span>` : ''}</div>`;
-  } else {
-    poiHTML = '<div style="font-size:10px;color:var(--text-dim);font-style:italic">未导入POI数据</div>';
-  }
-  const coordStr = sel.coordsGeoJSON.map((c) => `[${c[0].toFixed(6)}, ${c[1].toFixed(6)}]`).join(', ');
-  content.innerHTML = `
-    <div class="sel-detail-row"><span class="lbl">名称</span><span class="val">${sel.name}</span></div>
-    <div class="sel-detail-row"><span class="lbl">面积</span><span class="val">${formatArea(sel.area)}</span></div>
-    <div class="sel-detail-row"><span class="lbl">顶点数</span><span class="val">${sel.points.length}</span></div>
-    <div style="margin-top:10px">
-      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan-soft);font-weight:500;margin-bottom:6px">用地类型</div>
-      ${landuseHTML}
-    </div>
-    <div style="margin-top:10px">
-      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber-soft);font-weight:500;margin-bottom:6px">POI</div>
-      ${poiHTML}
-    </div>
-    <div style="margin-top:12px">
-      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);font-weight:500;margin-bottom:6px">坐标数据</div>
-      <div style="font-size:9px;color:var(--text-dim);font-family:monospace;word-break:break-all;max-height:60px;overflow:auto;background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:4px;border:1px solid var(--border-subtle)">[${coordStr}]</div>
-    </div>`;
-}
-
-function showSelectionCard(sel, e) {
-  const card = document.getElementById('infoCard');
-  document.getElementById('icName').textContent = sel.name;
-  document.getElementById('icBody').innerHTML = `
-    <div class="ic-row"><b>面积</b> ${formatArea(sel.area)}</div>
-    <div class="ic-row"><b>顶点</b> ${sel.points.length}</div>
-    ${sel.analysis.poiCount ? `<div class="ic-row"><b>POI</b> ${sel.analysis.poiCount}</div>` : ''}`;
-  const pt = map.latLngToContainerPoint(e.latlng);
-  card.style.left = pt.x + 16 + 'px';
-  card.style.top = pt.y - 20 + 'px';
-  card.classList.add('visible');
+  refreshAllSelectionMapCards();
+  persistMapDrafts();
 }
 
 function hideInfoCard() {
@@ -1912,12 +2146,12 @@ function updateDrawHint() {
     document.getElementById('drawHintAction').textContent = '完成';
   } else if (drawingSelection) {
     el.classList.add('visible');
-    document.getElementById('drawHintText').textContent = `绘制选址多边形 — 点击添加顶点 (${tempSelPoints.length} 点)`;
+    document.getElementById('drawHintText').textContent = `绘制激活区多边形 — 点击添加顶点 (${tempSelPoints.length} 点)`;
     document.getElementById('drawHintKey').textContent = 'Enter';
     document.getElementById('drawHintAction').textContent = '完成';
   } else if (currentMode === 'select') {
     el.classList.add('visible');
-    document.getElementById('drawHintText').textContent = '在地图上点击开始绘制选址多边形';
+    document.getElementById('drawHintText').textContent = '在地图上点击开始绘制激活区多边形';
     document.getElementById('drawHintKey').textContent = '';
     document.getElementById('drawHintAction').textContent = '';
   } else {
@@ -2044,6 +2278,148 @@ function formatArea(m2) {
   return m2.toFixed(0) + ' m²';
 }
 
+function togglePanelFold(panelId) {
+  const el = document.getElementById(panelId);
+  if (el) el.classList.toggle('fold-collapsed');
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function selectionCentroidLatLng(points) {
+  if (!points || !points.length) return null;
+  let la = 0;
+  let lo = 0;
+  points.forEach(([lat, lng]) => {
+    la += lat;
+    lo += lng;
+  });
+  const n = points.length;
+  return L.latLng(la / n, lo / n);
+}
+
+function formatPoiCategoryStats(pois) {
+  if (!pois || !pois.length) return '';
+  const m = {};
+  for (let i = 0; i < pois.length; i++) {
+    const k = String(pois[i].category || '').trim() || '未分类';
+    m[k] = (m[k] || 0) + 1;
+  }
+  return Object.entries(m)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => `${k} ${n}`)
+    .join(' · ');
+}
+
+function buildMapSelectionCardIcon(sel) {
+  const collapsed = !!sel.mapCardCollapsed;
+  const active = sel.id === activeSelectionId;
+  const esc = escapeHtml;
+  const w = collapsed ? 120 : 284;
+  let body = '';
+  let iconH = collapsed ? 26 : 452;
+  if (!collapsed) {
+    const sumLine = `${esc(formatArea(sel.area))} · ${sel.points.length} 顶点 · POI ${sel.analysis.poiCount || 0}`;
+    let landBlock = '';
+    const lu = sel.analysis.landuse;
+    if (lu && lu.length) {
+      const total = lu.reduce((s, x) => s + x.count, 0);
+      const barSpans = lu
+        .map((l) => `<span style="flex:${l.count};min-width:3px;background:${colorForLanduseType(l.type)}"></span>`)
+        .join('');
+      const rows = lu
+        .map(
+          (l) =>
+            `<div class="msc-lu-row"><span class="msc-lu-dot" style="background:${colorForLanduseType(
+              l.type
+            )}"></span><span>${esc(String(l.type))}</span><span class="msc-lu-n">${l.count}</span></div>`
+        )
+        .join('');
+      landBlock = `<div class="msc-sec">用地类型</div><div class="msc-bar">${barSpans}</div><div class="msc-lu-list">${rows}</div>`;
+    } else {
+      landBlock = `<div class="msc-sec">用地类型</div><div class="msc-muted2">暂无</div>`;
+    }
+    let poiBlock = '';
+    const pois = sel.analysis.pois || [];
+    if (pois.length) {
+      const stat = esc(formatPoiCategoryStats(pois));
+      const maxN = 100;
+      const slice = pois.slice(0, maxN);
+      const lines = slice
+        .map((p) => {
+          const cat = p.category ? `<span class="msc-poi-cat">${esc(p.category)}</span>` : '';
+          return `<div class="msc-poi-row">${cat}<span class="msc-poi-nm">${esc(p.name)}</span></div>`;
+        })
+        .join('');
+      const more = pois.length > maxN ? `<div class="msc-muted2">… 另有 ${pois.length - maxN} 条</div>` : '';
+      poiBlock = `<div class="msc-sec">POI</div><div class="msc-poi-sum">${stat}</div><div class="msc-poi-scroll">${lines}${more}</div>`;
+    } else {
+      poiBlock = `<div class="msc-sec">POI</div><div class="msc-muted2">暂无</div>`;
+    }
+    const blurbBlock = `<div class="msc-blurb-top-wrap"><div class="msc-blurb-top-title">一句话说明</div><div class="msc-blurb-edit msc-blurb-edit-top" contenteditable="true" spellcheck="false" data-sel-id="${esc(
+      sel.id
+    )}" data-placeholder="（可在此填写）"></div></div>`;
+    body = `<div class="msc-body msc-body-expanded">${blurbBlock}<div class="msc-sum">${sumLine}</div>${landBlock}${poiBlock}</div>`;
+    iconH = 452;
+  }
+  const html = `<div class="map-site-card${active ? ' msc-active' : ''}${collapsed ? ' msc-collapsed' : ' msc-expanded'}">
+      <div class="msc-head">
+        <span class="msc-name">${esc(sel.name)}</span>
+        <button type="button" class="msc-fold" data-sel-id="${esc(sel.id)}" title="展开/折叠">${collapsed ? '▸' : '▾'}</button>
+      </div>
+      ${body}
+    </div>`;
+  return {
+    html,
+    iconSize: [w, iconH],
+    iconAnchor: [w / 2, iconH]
+  };
+}
+
+function ensureSelectionMapCard(sel) {
+  const ll = selectionCentroidLatLng(sel.points);
+  if (!ll) return;
+  const { html, iconSize, iconAnchor } = buildMapSelectionCardIcon(sel);
+  const icon = L.divIcon({
+    className: 'map-site-card-wrap',
+    html,
+    iconSize,
+    iconAnchor
+  });
+  if (!sel.cardMarker) {
+    sel.cardMarker = L.marker(ll, {
+      icon,
+      pane: 'selCardPane',
+      interactive: true,
+      zIndexOffset: 900
+    }).addTo(map);
+  } else {
+    sel.cardMarker.setLatLng(ll);
+    sel.cardMarker.setIcon(icon);
+  }
+  const iconEl = sel.cardMarker.getElement && sel.cardMarker.getElement();
+  if (iconEl) {
+    const be = iconEl.querySelector('.msc-blurb-edit');
+    if (be) be.textContent = sel.blurb != null ? String(sel.blurb) : '';
+  }
+}
+
+function removeSelectionMapCard(sel) {
+  if (sel.cardMarker) {
+    map.removeLayer(sel.cardMarker);
+    sel.cardMarker = null;
+  }
+}
+
+function refreshAllSelectionMapCards() {
+  selections.forEach((s) => ensureSelectionMapCard(s));
+}
+
 function pointInPolygon(point, polygon) {
   const [x, y] = point;
   let inside = false;
@@ -2058,6 +2434,285 @@ function pointInPolygon(point, polygon) {
 function pointInStudyArea(lat, lng) {
   if (!studyAreaRings || studyAreaRings.length === 0) return true;
   return studyAreaRings.some((ring) => pointInPolygon([lat, lng], ring));
+}
+
+/** 沿东-北方向（米）移动 distM，返回 [lat,lng] */
+function offsetLatLngByEN(lat, lng, dirEast, dirNorth, distM) {
+  const mPerLat = 111320;
+  const mPerLng = 111320 * Math.cos((lat * Math.PI) / 180);
+  const len = Math.sqrt(dirEast * dirEast + dirNorth * dirNorth) || 1;
+  const e = (dirEast / len) * distM;
+  const n = (dirNorth / len) * distM;
+  return [lat + n / mPerLat, lng + e / mPerLng];
+}
+
+/** 折线两个端点中经度较大者（地图右侧端点） */
+function axisPolylineRightmostEndpoint(points) {
+  const a = points[0];
+  const b = points[points.length - 1];
+  return a[1] >= b[1] ? a : b;
+}
+
+/** 折线两个端点中经度较小者（地图左侧端点） */
+function axisPolylineLeftmostEndpoint(points) {
+  const a = points[0];
+  const b = points[points.length - 1];
+  return a[1] <= b[1] ? a : b;
+}
+
+/** 轴名 div 底边中点为锚点时，四角 [lat,lng]（用于判断是否整卡在研究区外） */
+function axisLabelCardCornerLatLngs(anchorLat, anchorLng, iconWpx, iconHpx) {
+  const c = map.latLngToLayerPoint(L.latLng(anchorLat, anchorLng));
+  const half = iconWpx / 2;
+  const pts = [
+    L.point(c.x - half, c.y - iconHpx),
+    L.point(c.x + half, c.y - iconHpx),
+    L.point(c.x - half, c.y),
+    L.point(c.x + half, c.y)
+  ];
+  return pts.map((p) => {
+    const ll = map.layerPointToLatLng(p);
+    return [ll.lat, ll.lng];
+  });
+}
+
+/** 沿东西向微移锚点，直至轴名卡片四角均不在研究区内；dirEastSign 为 +1 向东、-1 向西 */
+function nudgeAxisLabelCardOutsideStudy(anchorLat, anchorLng, iconWpx, iconHpx, dirEastSign) {
+  if (!map || !studyAreaRings || studyAreaRings.length === 0) return [anchorLat, anchorLng];
+  let lat = anchorLat;
+  let lng = anchorLng;
+  for (let step = 0; step < 500; step++) {
+    const corners = axisLabelCardCornerLatLngs(lat, lng, iconWpx, iconHpx);
+    const anyInside = corners.some(([alat, alng]) => pointInStudyArea(alat, alng));
+    if (!anyInside) return [lat, lng];
+    const moved = offsetLatLngByEN(lat, lng, dirEastSign, 0, 28);
+    lat = moved[0];
+    lng = moved[1];
+  }
+  return [lat, lng];
+}
+
+/** 从起点沿正东走出研究区后再外移，供轴名卡片落点 */
+function findAxisLabelAnchorEastward(startLat, startLng) {
+  const dirE = 1;
+  const dirN = 0;
+  if (!studyAreaRings || studyAreaRings.length === 0) {
+    return offsetLatLngByEN(startLat, startLng, dirE, dirN, 420);
+  }
+  let clat = startLat;
+  let clng = startLng;
+  let inside = pointInStudyArea(clat, clng);
+  for (let step = 0; step < 600; step++) {
+    const [nlat, nlng] = offsetLatLngByEN(clat, clng, dirE, dirN, 18);
+    clat = nlat;
+    clng = nlng;
+    const in2 = pointInStudyArea(clat, clng);
+    if (inside && !in2) {
+      return offsetLatLngByEN(clat, clng, dirE, dirN, 100);
+    }
+    inside = in2;
+  }
+  if (!inside) {
+    return offsetLatLngByEN(clat, clng, dirE, dirN, 80);
+  }
+  return offsetLatLngByEN(startLat, startLng, dirE, dirN, 480);
+}
+
+/** 从起点沿正西走出研究区后再外移（商业 / 体育认知轴） */
+function findAxisLabelAnchorWestward(startLat, startLng) {
+  const dirE = -1;
+  const dirN = 0;
+  if (!studyAreaRings || studyAreaRings.length === 0) {
+    return offsetLatLngByEN(startLat, startLng, dirE, dirN, 420);
+  }
+  let clat = startLat;
+  let clng = startLng;
+  let inside = pointInStudyArea(clat, clng);
+  for (let step = 0; step < 600; step++) {
+    const [nlat, nlng] = offsetLatLngByEN(clat, clng, dirE, dirN, 18);
+    clat = nlat;
+    clng = nlng;
+    const in2 = pointInStudyArea(clat, clng);
+    if (inside && !in2) {
+      return offsetLatLngByEN(clat, clng, dirE, dirN, 100);
+    }
+    inside = in2;
+  }
+  if (!inside) {
+    return offsetLatLngByEN(clat, clng, dirE, dirN, 80);
+  }
+  return offsetLatLngByEN(startLat, startLng, dirE, dirN, 480);
+}
+
+const LANDUSE_COLORS = {
+  用地: '#ce93d8',
+  商业: '#e91e8c',
+  居住: '#00d4ff',
+  办公: '#ffb300',
+  公共服务: '#4ceb9a',
+  绿地: '#27ae60',
+  交通: '#95a5a6',
+  工业: '#e67e22',
+  教育: '#9b59b6',
+  医疗: '#e74c3c',
+  文化: '#f39c12',
+  未分类: '#78909c',
+  R: '#5c6bc0',
+  C: '#26a69a',
+  G: '#66bb6a',
+  M: '#ffa726',
+  U: '#8d6e63',
+  S: '#b0bec5',
+  residential: '#5c6bc0',
+  commercial: '#e91e8c',
+  industrial: '#e67e22',
+  retail: '#ff8a65',
+  farmland: '#c0ca33',
+  farm: '#9e9d24',
+  meadow: '#9ccc65',
+  forest: '#2e7d32',
+  grass: '#66bb6a',
+  orchard: '#7cb342',
+  vineyard: '#8bc34a',
+  allotments: '#aed581',
+  cemetery: '#90a4ae',
+  water: '#1e88e5',
+  wetland: '#26c6da',
+  sand: '#ffe082',
+  beach: '#ffcc80',
+  scrub: '#8d6e63',
+  wood: '#33691e',
+  park: '#43a047',
+  garden: '#66bb6a',
+  playground: '#7cb342',
+  pitch: '#558b2f',
+  stadium: '#558b2f',
+  golf_course: '#558b2f',
+  recreation_ground: '#689f38'
+};
+
+function getLanduseTypeKey(props) {
+  if (!props) return '未分类';
+  const raw =
+    props.landuse_type ??
+    props.landuse ??
+    props.natural ??
+    props.leisure ??
+    props.landcover ??
+    props.amenity ??
+    props.waterway ??
+    props.LANDUSE ??
+    props.用地性质 ??
+    props.YDLX ??
+    props.TYPE ??
+    props.name;
+  const s = raw != null && String(raw).trim() !== '' ? String(raw).trim() : '';
+  return s || '未分类';
+}
+
+function colorForLanduseType(t) {
+  const key = String(t || '').trim() || '未分类';
+  if (LANDUSE_COLORS[key]) return LANDUSE_COLORS[key];
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (((h << 5) - h + key.charCodeAt(i)) | 0) >>> 0;
+  const hue = h % 360;
+  return `hsl(${hue}, 58%, 48%)`;
+}
+
+function coordsNearLL(a, b, eps = 1e-9) {
+  return Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps;
+}
+
+function closedLatLngRing(ring) {
+  if (!ring || ring.length < 2) return ring;
+  const f = ring[0];
+  const l = ring[ring.length - 1];
+  if (coordsNearLL(f, l)) return ring;
+  return [...ring, [f[0], f[1]]];
+}
+
+function openLatLngRing(ringClosed) {
+  if (!ringClosed || ringClosed.length < 2) return ringClosed || [];
+  const f = ringClosed[0];
+  const l = ringClosed[ringClosed.length - 1];
+  if (coordsNearLL(f, l)) return ringClosed.slice(0, -1);
+  return ringClosed;
+}
+
+/** 线段相交（平面近似，顶点为 [lat,lng]，与 pointInPolygon 一致） */
+function segmentsIntersectLatLng(p1, p2, p3, p4) {
+  const eps = 1e-10;
+  const orient = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const onSeg = (a, b, c) =>
+    Math.min(a[0], c[0]) - eps <= b[0] &&
+    b[0] <= Math.max(a[0], c[0]) + eps &&
+    Math.min(a[1], c[1]) - eps <= b[1] &&
+    b[1] <= Math.max(a[1], c[1]) + eps;
+  const o1 = orient(p1, p2, p3);
+  const o2 = orient(p1, p2, p4);
+  const o3 = orient(p3, p4, p1);
+  const o4 = orient(p3, p4, p2);
+  if (Math.abs(o1) < eps && onSeg(p1, p3, p2)) return true;
+  if (Math.abs(o2) < eps && onSeg(p1, p4, p2)) return true;
+  if (Math.abs(o3) < eps && onSeg(p3, p1, p4)) return true;
+  if (Math.abs(o4) < eps && onSeg(p3, p2, p4)) return true;
+  return (o1 > eps && o2 < -eps && o3 > eps && o4 < -eps) || (o1 < -eps && o2 > eps && o3 < -eps && o4 > eps);
+}
+
+function ringEdgesIntersectClosed(ringA, ringB) {
+  for (let i = 0; i < ringA.length - 1; i++) {
+    for (let j = 0; j < ringB.length - 1; j++) {
+      if (segmentsIntersectLatLng(ringA[i], ringA[i + 1], ringB[j], ringB[j + 1])) return true;
+    }
+  }
+  return false;
+}
+
+/** GeoJSON 环 [lng,lat][] → [lat,lng][] */
+function lngLatRingToLatLng(ringLngLat) {
+  return ringLngLat.map(([lng, lat]) => [lat, lng]);
+}
+
+/** 激活区（开环顶点）与用地外环是否接触或重叠 */
+function activationTouchesLandRingLngLat(actPointsOpen, ringLngLat) {
+  if (!actPointsOpen || actPointsOpen.length < 2 || !ringLngLat || ringLngLat.length < 3) return false;
+  const landLL = lngLatRingToLatLng(ringLngLat);
+  const landClosed = closedLatLngRing(landLL);
+  const landOpen = openLatLngRing(landClosed);
+  const actClosed = closedLatLngRing(actPointsOpen);
+  const actOpen = openLatLngRing(actClosed);
+  for (let i = 0; i < landOpen.length; i++) {
+    if (pointInPolygon(landOpen[i], actPointsOpen)) return true;
+  }
+  for (let i = 0; i < actOpen.length; i++) {
+    if (pointInPolygon(actOpen[i], landOpen)) return true;
+  }
+  if (ringEdgesIntersectClosed(actClosed, landClosed)) return true;
+  const touchEps = 1e-7;
+  for (let i = 0; i < actOpen.length; i++) {
+    const a = actOpen[i];
+    for (let j = 0; j < landOpen.length; j++) {
+      const l = landOpen[j];
+      if (Math.abs(a[0] - l[0]) < touchEps && Math.abs(a[1] - l[1]) < touchEps) return true;
+    }
+  }
+  return false;
+}
+
+function landuseFeatureTouchesActivation(f, actPointsOpen) {
+  const g = f.geometry;
+  if (!g) return false;
+  if (g.type === 'Polygon' && g.coordinates && g.coordinates[0]) {
+    return activationTouchesLandRingLngLat(actPointsOpen, g.coordinates[0]);
+  }
+  if (g.type === 'MultiPolygon' && g.coordinates) {
+    for (let pi = 0; pi < g.coordinates.length; pi++) {
+      const poly = g.coordinates[pi];
+      const outer = poly && poly[0];
+      if (outer && activationTouchesLandRingLngLat(actPointsOpen, outer)) return true;
+    }
+  }
+  return false;
 }
 
 function analyzeSelection(points) {
@@ -2075,17 +2730,13 @@ function analyzeSelection(points) {
     }));
     result.poiCount = result.pois.length;
   }
+  // 用地：全量 landuseData（与地图研究区内填色同源）；逐要素几何接触判断
   if (landuseData && landuseData.features) {
     const typeCounts = {};
     landuseData.features.forEach((f) => {
       if (f.geometry.type !== 'Polygon' && f.geometry.type !== 'MultiPolygon') return;
-      const c = landuseFeatureCentroidLngLat(f);
-      if (!c) return;
-      const clng = c[0];
-      const clat = c[1];
-      if (!pointInStudyArea(clat, clng)) return;
-      if (!pointInPolygon([clat, clng], points)) return;
-      const t = f.properties.landuse_type || f.properties.name || '未分类';
+      if (!landuseFeatureTouchesActivation(f, points)) return;
+      const t = getLanduseTypeKey(f.properties);
       typeCounts[t] = (typeCounts[t] || 0) + 1;
     });
     result.landuse = Object.entries(typeCounts)
@@ -2110,23 +2761,317 @@ function landuseFeatureCentroidLngLat(f) {
   return [clng, clat];
 }
 
-async function loadStaticDataLayers() {
-  try {
-    const lr = await fetch(STATIC_LANDUSE_URL, { cache: 'no-store' });
-    if (lr.ok) {
-      landuseData = await lr.json();
-      renderLanduseLayer();
-    } else {
-      console.warn('[用地] 未找到', STATIC_LANDUSE_URL, '— 请在仓库根目录执行: npm run clip:lan-use（由 data/lan_use.shp 生成）');
+function updateLanduseLayerNearAxes() {
+  if (landuseLayers) {
+    map.removeLayer(landuseLayers);
+    landuseLayers = null;
+  }
+  if (!landuseData || !landuseData.features || !landuseData.features.length) return;
+  const filtered = landuseData.features.filter((f) => {
+    if (f.geometry.type !== 'Polygon' && f.geometry.type !== 'MultiPolygon') return false;
+    const c = landuseFeatureCentroidLngLat(f);
+    if (!c) return false;
+    const [clng, clat] = c;
+    return pointInStudyArea(clat, clng);
+  });
+  if (filtered.length === 0) return;
+  landuseLayers = L.geoJSON(
+    { type: 'FeatureCollection', features: filtered },
+    {
+      pane: 'dataPane',
+      style(f) {
+        const tKey = getLanduseTypeKey(f.properties);
+        const color = colorForLanduseType(tKey);
+        return { color, weight: 1, opacity: 0.62, fillColor: color, fillOpacity: 0.22 };
+      },
+      onEachFeature: (f, layer) => {
+        layer.on('mouseover', (e) => {
+          const card = document.getElementById('infoCard');
+          const tKey = getLanduseTypeKey(f.properties);
+          document.getElementById('icName').textContent = f.properties.name || tKey || '地块';
+          const osmRow =
+            f.properties.osm_relation_id != null
+              ? `<div class="ic-row"><b>OSM relation</b> ${f.properties.osm_relation_id}</div>`
+              : f.properties.osm_way_id != null
+                ? `<div class="ic-row"><b>OSM way</b> ${f.properties.osm_way_id}</div>`
+                : '';
+          document.getElementById('icBody').innerHTML = `<div class="ic-row"><b>用地类型</b> ${tKey}</div>${osmRow}${f.properties.description ? `<div class="ic-row">${f.properties.description}</div>` : ''}`;
+          const pt = map.latLngToContainerPoint(e.latlng);
+          card.style.left = pt.x + 16 + 'px';
+          card.style.top = pt.y - 20 + 'px';
+          card.classList.add('visible');
+        });
+        layer.on('mouseout', () => hideInfoCard());
+      }
     }
+  ).addTo(map);
+}
+
+function mergeBoundingBoxes(a, b) {
+  return {
+    south: Math.min(a.south, b.south),
+    west: Math.min(a.west, b.west),
+    north: Math.max(a.north, b.north),
+    east: Math.max(a.east, b.east)
+  };
+}
+
+function bboxFromLatLngPoints(points, padDeg) {
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let minLng = Infinity;
+  let maxLng = -Infinity;
+  for (let i = 0; i < points.length; i++) {
+    const [lat, lng] = points[i];
+    minLat = Math.min(minLat, lat);
+    maxLat = Math.max(maxLat, lat);
+    minLng = Math.min(minLng, lng);
+    maxLng = Math.max(maxLng, lng);
+  }
+  if (!Number.isFinite(minLat)) return { ...FALLBACK_LANDUSE_BBOX };
+  return {
+    south: minLat - padDeg,
+    west: minLng - padDeg,
+    north: maxLat + padDeg,
+    east: maxLng + padDeg
+  };
+}
+
+function bboxFromStudyAreaRings(padDeg) {
+  if (!studyAreaRings || !studyAreaRings.length) return null;
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let minLng = Infinity;
+  let maxLng = -Infinity;
+  studyAreaRings.forEach((ring) => {
+    ring.forEach(([lat, lng]) => {
+      minLat = Math.min(minLat, lat);
+      maxLat = Math.max(maxLat, lat);
+      minLng = Math.min(minLng, lng);
+      maxLng = Math.max(maxLng, lng);
+    });
+  });
+  if (!Number.isFinite(minLat)) return null;
+  return {
+    south: minLat - padDeg,
+    west: minLng - padDeg,
+    north: maxLat + padDeg,
+    east: maxLng + padDeg
+  };
+}
+
+/** Overpass 查询 bbox：研究区 ∪ 当前所有激活区顶点包络（均外扩），覆盖地图填色与统计所需范围 */
+function computeLanduseOverpassBbox() {
+  const studyPad = 0.004;
+  const selPad = 0.009;
+  let bb = bboxFromStudyAreaRings(studyPad);
+  if (!bb) bb = { ...FALLBACK_LANDUSE_BBOX };
+  selections.forEach((s) => {
+    if (s.points && s.points.length) {
+      bb = mergeBoundingBoxes(bb, bboxFromLatLngPoints(s.points, selPad));
+    }
+  });
+  return bb;
+}
+
+function bboxOuterCoversInner(outer, inner) {
+  return (
+    outer.south <= inner.south + 1e-8 &&
+    outer.north >= inner.north - 1e-8 &&
+    outer.west <= inner.west + 1e-8 &&
+    outer.east >= inner.east - 1e-8
+  );
+}
+
+function buildOverpassLanduseQuery(south, west, north, east) {
+  const s = south.toFixed(5);
+  const w = west.toFixed(5);
+  const n = north.toFixed(5);
+  const e = east.toFixed(5);
+  return `[out:json][timeout:300];
+(
+  way["landuse"](${s},${w},${n},${e});
+  way["natural"~"wood|water|wetland|grassland|scrub|sand|beach|bare_rock|grass|heath|fell|bay|shingle|mud|rock|glacier"](${s},${w},${n},${e});
+  way["leisure"~"park|garden|playground|pitch|stadium|golf_course|recreation_ground|nature_reserve|marina|dog_park|common|swimming_pool|fitness_centre"](${s},${w},${n},${e});
+  way["landcover"](${s},${w},${n},${e});
+  way["waterway"~"riverbank|dock|basin|dam"](${s},${w},${n},${e});
+  way["amenity"~"university|college|hospital|school|kindergarten|grave_yard|parking|marketplace|community_centre|arts_centre|theatre|library|swimming_pool|townhall"](${s},${w},${n},${e});
+  relation["type"="multipolygon"]["landuse"](${s},${w},${n},${e});
+  relation["type"="multipolygon"]["natural"](${s},${w},${n},${e});
+  relation["type"="multipolygon"]["leisure"](${s},${w},${n},${e});
+  relation["type"="multipolygon"]["landcover"](${s},${w},${n},${e});
+  relation["type"="multipolygon"]["amenity"](${s},${w},${n},${e});
+  relation["type"="multipolygon"]["waterway"](${s},${w},${n},${e});
+);
+(._;>;);
+out geom;`;
+}
+
+function primaryOsmLandTag(tags) {
+  if (!tags) return '';
+  const w = tags.waterway;
+  const waterPoly = w && /^(riverbank|dock|basin|dam)$/i.test(String(w)) ? String(w) : '';
+  return tags.landuse || tags.natural || tags.leisure || tags.landcover || tags.amenity || waterPoly || '';
+}
+
+let osmtogeojsonLoadPromise = null;
+function loadOsmToGeojson() {
+  if (!osmtogeojsonLoadPromise) {
+    osmtogeojsonLoadPromise = import('https://esm.sh/osmtogeojson@3.0.0-beta.5?bundle').then((m) => {
+      const fn = m.default;
+      if (typeof fn !== 'function') throw new Error('osmtogeojson 未导出为函数');
+      return fn;
+    });
+  }
+  return osmtogeojsonLoadPromise;
+}
+
+function parseOsmFlatId(props) {
+  const id = props && props.id;
+  if (!id || typeof id !== 'string') return null;
+  const m = id.match(/^(way|relation)\/(\d+)$/);
+  if (!m) return null;
+  return { kind: m[1], num: Number(m[2]) };
+}
+
+/** 将 osmtogeojson 输出规范为与地图/统计一致的用地要素（仅面，且至少有一种用地相关主标签） */
+function normalizeLanduseFromOsmGeoJSON(gj) {
+  const features = [];
+  const list = gj && gj.features ? gj.features : [];
+  for (let i = 0; i < list.length; i++) {
+    const f = list[i];
+    const gt = f.geometry && f.geometry.type;
+    if (gt !== 'Polygon' && gt !== 'MultiPolygon') continue;
+    const p = f.properties || {};
+    const primary = primaryOsmLandTag(p);
+    if (!primary) continue;
+    const pid = parseOsmFlatId(p);
+    const props = {
+      ...p,
+      landuse_type: primary,
+      osm_way_id: pid && pid.kind === 'way' ? pid.num : p.osm_way_id,
+      osm_relation_id: pid && pid.kind === 'relation' ? pid.num : p.osm_relation_id
+    };
+    features.push({ type: 'Feature', properties: props, geometry: f.geometry });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+function closedLngLatRingFromOverpassGeometry(geometry) {
+  if (!geometry || geometry.length < 4) return null;
+  const coords = geometry.map((p) => [p.lon, p.lat]);
+  const a = coords[0];
+  const z = coords[coords.length - 1];
+  if (a[0] !== z[0] || a[1] !== z[1]) coords.push([a[0], a[1]]);
+  return coords;
+}
+
+function overpassLandElementsToGeoJSON(elements) {
+  const features = [];
+  if (!elements || !elements.length) return { type: 'FeatureCollection', features };
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    if (el.type !== 'way' || !el.tags || !el.geometry) continue;
+    const tagKey = primaryOsmLandTag(el.tags);
+    if (!tagKey) continue;
+    const ring = closedLngLatRingFromOverpassGeometry(el.geometry);
+    if (!ring) continue;
+    features.push({
+      type: 'Feature',
+      properties: {
+        landuse_type: String(tagKey),
+        landuse: el.tags.landuse || '',
+        natural: el.tags.natural || '',
+        leisure: el.tags.leisure || '',
+        name: el.tags.name || el.tags['name:zh'] || el.tags['name:en'] || '',
+        osm_way_id: el.id,
+        source: 'osm'
+      },
+      geometry: { type: 'Polygon', coordinates: [ring] }
+    });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+async function postOverpassInterpreter(query) {
+  const body = 'data=' + encodeURIComponent(query);
+  let lastErr = null;
+  for (let u = 0; u < OVERPASS_INTERPRETER_URLS.length; u++) {
+    try {
+      const res = await fetch(OVERPASS_INTERPRETER_URLS[u], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+        mode: 'cors',
+        cache: 'no-store'
+      });
+      if (!res.ok) {
+        lastErr = new Error('HTTP ' + res.status);
+        continue;
+      }
+      return res.json();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('Overpass 不可用');
+}
+
+async function fetchOsmLanduseFeatureCollection(bb) {
+  const q = buildOverpassLanduseQuery(bb.south, bb.west, bb.north, bb.east);
+  const osm = await postOverpassInterpreter(q);
+  try {
+    const osmtogeojson = await loadOsmToGeojson();
+    const gj = osmtogeojson(osm, { flatProperties: true });
+    return normalizeLanduseFromOsmGeoJSON(gj);
   } catch (e) {
-    console.warn('[用地] 加载失败', e);
+    console.warn('[用地/OSM] osmtogeojson 转换失败，退回仅 way 解析（可能缺少 multipolygon relation）', e);
+    const elements = osm.elements || [];
+    return overpassLandElementsToGeoJSON(elements);
+  }
+}
+
+async function refetchLanduseIfSelectionsExceedCachedBbox() {
+  const need = computeLanduseOverpassBbox();
+  if (landuseOverpassBboxLast && bboxOuterCoversInner(landuseOverpassBboxLast, need)) return;
+  const qbox = landuseOverpassBboxLast ? mergeBoundingBoxes(landuseOverpassBboxLast, need) : need;
+  try {
+    landuseData = await fetchOsmLanduseFeatureCollection(qbox);
+    landuseOverpassBboxLast = qbox;
+    if (!landuseData.features.length) {
+      console.warn('[用地/OSM] 扩大 bbox 后仍未返回面要素');
+    }
+    updateLanduseLayerNearAxes();
+    selections.forEach((s) => {
+      s.analysis = analyzeSelection(s.points);
+    });
+    recomputeActivationDisplayNames();
+    renderSelectionList();
+    refreshAllSelectionMapCards();
+    persistMapDrafts();
+  } catch (e) {
+    console.warn('[用地/OSM] 扩大范围重拉失败', e);
+  }
+}
+
+async function loadStaticDataLayers() {
+  const bb = computeLanduseOverpassBbox();
+  try {
+    landuseData = await fetchOsmLanduseFeatureCollection(bb);
+    landuseOverpassBboxLast = bb;
+    if (!landuseData.features.length) {
+      console.warn('[用地/OSM] 未返回面要素，可能 bbox 内无数据或查询被拒');
+    }
+    updateLanduseLayerNearAxes();
+  } catch (e) {
+    console.warn('[用地/OSM] Overpass 拉取失败', e);
+    landuseData = { type: 'FeatureCollection', features: [] };
+    landuseOverpassBboxLast = null;
   }
   try {
     const pr = await fetch(STATIC_POI_URL, { cache: 'no-store' });
     if (pr.ok) {
       poiData = await pr.json();
-      renderPOILayer();
     } else {
       console.warn('[POI] 未找到', STATIC_POI_URL);
     }
@@ -2136,90 +3081,24 @@ async function loadStaticDataLayers() {
   selections.forEach((sel) => {
     sel.analysis = analyzeSelection(sel.points);
   });
-  if (activeSelectionId) {
-    const sel = selections.find((s) => s.id === activeSelectionId);
-    if (sel) showSelectionDetail(sel);
-  }
+  recomputeActivationDisplayNames();
   renderSelectionList();
-  updateParcelStatsPanel();
+  persistMapDrafts();
 }
 
-const LANDUSE_COLORS = {
-  用地: '#ce93d8',
-  商业: '#e91e8c',
-  居住: '#00d4ff',
-  办公: '#ffb300',
-  公共服务: '#4ceb9a',
-  绿地: '#27ae60',
-  交通: '#95a5a6',
-  工业: '#e67e22',
-  教育: '#9b59b6',
-  医疗: '#e74c3c',
-  文化: '#f39c12'
-};
-
-function renderLanduseLayer() {
-  if (landuseLayers) map.removeLayer(landuseLayers);
-  if (!landuseData) return;
-  landuseLayers = L.geoJSON(landuseData, {
-    pane: 'dataPane',
-    style(f) {
-      const t = f.properties.landuse_type || '';
-      const color = LANDUSE_COLORS[t] || '#888';
-      return { color, weight: 1, opacity: 0.5, fillColor: color, fillOpacity: 0.15 };
-    },
-    onEachFeature: (f, layer) => {
-      layer.on('mouseover', (e) => {
-        const card = document.getElementById('infoCard');
-        document.getElementById('icName').textContent = f.properties.name || f.properties.landuse_type || '地块';
-        document.getElementById('icBody').innerHTML = `<div class="ic-row"><b>用地</b> ${f.properties.landuse_type || '未分类'}</div>${f.properties.description ? `<div class="ic-row">${f.properties.description}</div>` : ''}`;
-        const pt = map.latLngToContainerPoint(e.latlng);
-        card.style.left = pt.x + 16 + 'px';
-        card.style.top = pt.y - 20 + 'px';
-        card.classList.add('visible');
-      });
-      layer.on('mouseout', () => hideInfoCard());
-    }
-  }).addTo(map);
-}
-
-/** 大徐家汇近似范围，减轻 poi_all 全量打点压力 */
-function poiRoughInStudy(lat, lng) {
-  return lng >= 121.405 && lng <= 121.49 && lat >= 31.165 && lat <= 31.23;
-}
-
-function renderPOILayer() {
-  if (poiLayers) map.removeLayer(poiLayers);
-  if (!poiData) return;
-  poiLayers = L.layerGroup({ pane: 'dataPane' }).addTo(map);
-  poiData.features.forEach((f) => {
-    if (f.geometry.type !== 'Point') return;
-    const [lng, lat] = f.geometry.coordinates;
-    if (!poiRoughInStudy(lat, lng)) return;
-    const marker = L.circleMarker([lat, lng], {
-      pane: 'dataPane',
-      radius: 4,
-      fillColor: '#ff4dad',
-      fillOpacity: 0.8,
-      color: 'rgba(255,255,255,0.4)',
-      weight: 1
-    }).addTo(poiLayers);
-    marker.on('mouseover', (e) => {
-      const card = document.getElementById('infoCard');
-      document.getElementById('icName').textContent = f.properties.name || 'POI';
-      document.getElementById('icBody').innerHTML = `<div class="ic-row"><b>分组</b> ${f.properties.group || '-'}</div><div class="ic-row"><b>类型</b> ${f.properties.type || f.properties.category || '-'}</div>${f.properties.address ? `<div class="ic-row"><b>地址</b> ${f.properties.address}</div>` : ''}`;
-      const pt = map.latLngToContainerPoint(e.latlng);
-      card.style.left = pt.x + 16 + 'px';
-      card.style.top = pt.y - 20 + 'px';
-      card.classList.add('visible');
-    });
-    marker.on('mouseout', () => hideInfoCard());
-  });
-}
-
+restoreMapDrafts();
 renderAxisList();
-updateParcelStatsPanel();
-loadStaticDataLayers();
+loadDefaultStudyBoundary()
+  .then(() => {
+    axes.forEach((a) => {
+      if (a.points && a.points.length >= 2) applyAxisGeometryToMap(a);
+    });
+    subAxes.forEach((a) => {
+      if (a.points && a.points.length >= 2) applyAxisGeometryToMap(a);
+    });
+    return loadStaticDataLayers();
+  })
+  .then(() => setMode(currentMode));
 </script>
 </body>
 </html>
