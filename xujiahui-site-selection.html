@@ -191,6 +191,18 @@
     cursor:pointer;transition:all 0.2s;white-space:nowrap;
   }
   .toolbar-draft-btn:hover{color:var(--text-primary);background:rgba(255,255,255,0.08)}
+  .toolbar-draft-status{
+    font-size:9px;color:var(--text-dim);max-width:160px;line-height:1.35;
+    padding:0 4px;
+  }
+  .draft-sync-toast{
+    position:fixed;bottom:52px;left:50%;transform:translateX(-50%);
+    z-index:1004;padding:8px 14px;border-radius:8px;
+    background:rgba(18,18,22,0.95);border:1px solid var(--border-subtle);
+    font-size:10px;color:var(--text-secondary);
+    opacity:0;pointer-events:none;transition:opacity 0.25s;
+  }
+  .draft-sync-toast.visible{opacity:1}
   .toolbar button{
     padding:8px 14px;border:none;border-radius:7px;
     font-family:inherit;font-size:11px;font-weight:500;
@@ -611,9 +623,15 @@
   <div class="toolbar-draft-row">
     <button type="button" class="toolbar-draft-btn" onclick="exportSiteSelectionDraft()" title="下载与仓库 data/site-selection-draft.json 同结构的 JSON">导出 JSON</button>
     <button type="button" class="toolbar-draft-btn" onclick="document.getElementById('draftFileInput').click()" title="从文件恢复轴线与资源区/潜力区（会覆盖当前地图草稿）">导入 JSON</button>
+    <button type="button" id="btn-link-draft-open" class="toolbar-draft-btn" onclick="linkSiteSelectionDraftFileOpen()" title="选择项目内已有 JSON（如 data/site-selection-draft.json），之后每次编辑自动写入该文件">关联文件</button>
+    <button type="button" id="btn-link-draft-save" class="toolbar-draft-btn" onclick="linkSiteSelectionDraftFileSave()" title="另存为并关联；可保存到仓库 data 目录">另存关联</button>
+    <button type="button" id="btn-unlink-draft-file" class="toolbar-draft-btn" onclick="unlinkSiteSelectionDraftFile()" style="display:none" title="停止自动写入已关联的本地文件">解除关联</button>
+    <span id="draft-auto-save-status" class="toolbar-draft-status" aria-live="polite"></span>
     <input type="file" id="draftFileInput" accept=".json,application/json" hidden />
   </div>
 </div>
+
+<div id="draftSyncToast" class="draft-sync-toast" role="status"></div>
 
 <div class="axis-dock">
   <div class="panel-card axis-panel" id="axisPanel">
@@ -628,7 +646,7 @@
           点击轴线名称进入绘制 → 在地图上逐点点击 → 按 <b>Enter</b> 完成 / <b>Esc</b> 取消<br>
           主轴均为玫红<strong>实线</strong>（无顶点圆点）。<strong>商业 / 体育认知轴</strong>：轴名从<strong>最左端点</strong>向<strong>西</strong>引出，卡片整体落在研究区外；<strong>社会认知轴（V1 / V2 / V3）</strong>：每条均从最右端点向<strong>东</strong>引出至区外。<b>新增副轴</b> 为玫红<strong>虚线</strong>，无轴名标签<br>
           用地数据加载后，在<strong>研究区</strong>内显示全部<strong>OSM 用地</strong>填色（按标签类型配色）；POI 不参与地图打点，仍参与资源区 / 潜力区统计。<br>
-          每个多边形在地图质心处有常驻卡片，可折叠；轴线与两区会<strong>自动保存</strong>在本浏览器。<strong>导出 JSON</strong> 后可保存为仓库内 <code style="font-size:9px">data/site-selection-draft.json</code> 并推送，GitHub Pages 等环境在<strong>无本地草稿</strong>时会自动加载该文件。
+          每个多边形在地图质心处有常驻卡片，可折叠；轴线与两区会<strong>自动保存</strong>在本浏览器。<strong>关联文件 / 另存关联</strong>（Chrome、Edge）可将草稿<strong>每次编辑后自动写入</strong>你选定的本地 JSON（建议指向仓库里的 <code style="font-size:9px">data/site-selection-draft.json</code>），再自行 git 提交推送；亦可使用<strong>导出 JSON</strong>。GitHub Pages 在<strong>无本地草稿</strong>时会尝试加载仓库中的该文件。
         </div>
       </div>
     </div>
@@ -1922,6 +1940,210 @@ const LOCAL_STORAGE_KEY = 'xujiahui-site-selection-drafts-v1';
 /** 随仓库发布：无本地 localStorage 草稿时 fetch 此路径（可导出 JSON 后保存为该文件并 git push） */
 const STATIC_DRAFT_URL = 'data/site-selection-draft.json';
 
+const FS_IDB_NAME = 'xujiahui-site-selection-fs';
+const FS_IDB_STORE = 'handles';
+const FS_IDB_KEY = 'draftFile';
+
+let linkedDraftFileHandle = null;
+let draftFileSyncTimer = null;
+let draftSyncToastTimer = null;
+
+function supportsDraftFileAutoSave() {
+  return typeof window.showSaveFilePicker === 'function';
+}
+
+function openFsIdb() {
+  return new Promise((resolve, reject) => {
+    const r = indexedDB.open(FS_IDB_NAME, 1);
+    r.onupgradeneeded = (ev) => {
+      const db = ev.target.result;
+      if (!db.objectStoreNames.contains(FS_IDB_STORE)) db.createObjectStore(FS_IDB_STORE);
+    };
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+
+async function idbGetDraftFileHandle() {
+  const db = await openFsIdb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FS_IDB_STORE, 'readonly');
+    const req = tx.objectStore(FS_IDB_STORE).get(FS_IDB_KEY);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function idbSetDraftFileHandle(handle) {
+  const db = await openFsIdb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FS_IDB_STORE, 'readwrite');
+    tx.objectStore(FS_IDB_STORE).put(handle, FS_IDB_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function idbDeleteDraftFileHandle() {
+  const db = await openFsIdb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FS_IDB_STORE, 'readwrite');
+    tx.objectStore(FS_IDB_STORE).delete(FS_IDB_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function updateDraftLinkUi() {
+  const bo = document.getElementById('btn-link-draft-open');
+  const bs = document.getElementById('btn-link-draft-save');
+  const bu = document.getElementById('btn-unlink-draft-file');
+  const st = document.getElementById('draft-auto-save-status');
+  const ok = supportsDraftFileAutoSave();
+  if (!ok) {
+    if (bo) bo.style.display = 'none';
+    if (bs) bs.style.display = 'none';
+    if (bu) bu.style.display = 'none';
+    if (st) st.textContent = '自动写盘需 Chrome/Edge';
+    return;
+  }
+  if (linkedDraftFileHandle) {
+    if (bo) bo.style.display = 'none';
+    if (bs) bs.style.display = 'none';
+    if (bu) bu.style.display = '';
+    if (st && !String(st.textContent || '').includes('失败')) st.textContent = '已关联 · 编辑后自动写盘';
+  } else {
+    if (bo) bo.style.display = '';
+    if (bs) bs.style.display = '';
+    if (bu) bu.style.display = 'none';
+    if (st) st.textContent = '';
+  }
+}
+
+function showDraftSyncToastBrief(msg) {
+  const el = document.getElementById('draftSyncToast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(draftSyncToastTimer);
+  draftSyncToastTimer = setTimeout(() => el.classList.remove('visible'), 1600);
+}
+
+async function syncDraftToLinkedFile() {
+  const h = linkedDraftFileHandle;
+  if (!h || !supportsDraftFileAutoSave()) return;
+  try {
+    let perm = await h.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') {
+      perm = await h.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') return;
+    }
+    const w = await h.createWritable();
+    const text = JSON.stringify(buildMapDraftPayload(), null, 2);
+    await w.write(text);
+    await w.close();
+    const st = document.getElementById('draft-auto-save-status');
+    if (st) st.textContent = '已关联 · 编辑后自动写盘';
+    showDraftSyncToastBrief('已写入关联的 JSON 文件');
+  } catch (e) {
+    console.warn('[选址草稿] 自动写盘失败', e);
+    const st = document.getElementById('draft-auto-save-status');
+    if (st) st.textContent = '写盘失败，请重新关联';
+  }
+}
+
+function scheduleDraftFileSync() {
+  if (!linkedDraftFileHandle) return;
+  clearTimeout(draftFileSyncTimer);
+  draftFileSyncTimer = setTimeout(() => void syncDraftToLinkedFile(), 500);
+}
+
+async function linkSiteSelectionDraftFileOpen() {
+  if (!window.showOpenFilePicker) {
+    alert('当前浏览器不支持「选择已有文件」，请使用「另存关联」或换用 Chrome / Edge。');
+    return;
+  }
+  try {
+    const arr = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+      multiple: false
+    });
+    const handle = arr[0];
+    const perm = await handle.requestPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') {
+      alert('需要写入权限才能自动保存');
+      return;
+    }
+    linkedDraftFileHandle = handle;
+    await idbSetDraftFileHandle(handle);
+    updateDraftLinkUi();
+    await syncDraftToLinkedFile();
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    console.warn(e);
+    alert('关联失败：' + (e && e.message ? e.message : String(e)));
+  }
+}
+
+async function linkSiteSelectionDraftFileSave() {
+  if (!supportsDraftFileAutoSave()) {
+    alert('当前浏览器不支持本地文件自动保存，请使用 Chrome 或 Edge。');
+    return;
+  }
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: 'site-selection-draft.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } } }]
+    });
+    const perm = await handle.requestPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') {
+      alert('需要写入权限才能自动保存');
+      return;
+    }
+    linkedDraftFileHandle = handle;
+    await idbSetDraftFileHandle(handle);
+    updateDraftLinkUi();
+    await syncDraftToLinkedFile();
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    console.warn(e);
+    alert('关联失败：' + (e && e.message ? e.message : String(e)));
+  }
+}
+
+async function unlinkSiteSelectionDraftFile() {
+  linkedDraftFileHandle = null;
+  clearTimeout(draftFileSyncTimer);
+  draftFileSyncTimer = null;
+  try {
+    await idbDeleteDraftFileHandle();
+  } catch (e) {
+    console.warn(e);
+  }
+  updateDraftLinkUi();
+}
+
+async function restoreLinkedDraftFileHandleFromIdb() {
+  if (!supportsDraftFileAutoSave()) {
+    updateDraftLinkUi();
+    return;
+  }
+  try {
+    const h = await idbGetDraftFileHandle();
+    if (!h) {
+      updateDraftLinkUi();
+      return;
+    }
+    linkedDraftFileHandle = h;
+    updateDraftLinkUi();
+    scheduleDraftFileSync();
+  } catch (e) {
+    console.warn('[选址草稿] 恢复文件句柄失败', e);
+    linkedDraftFileHandle = null;
+    updateDraftLinkUi();
+  }
+}
+
 const SEL_POLY_RESOURCE = {
   color: '#00bcd4',
   weight: 2,
@@ -2184,6 +2406,7 @@ function persistMapDrafts() {
   } catch (e) {
     console.warn('本地保存失败（可能超出浏览器存储配额）', e);
   }
+  scheduleDraftFileSync();
 }
 
 /** @returns {boolean} 是否已从 localStorage 恢复 */
@@ -3571,6 +3794,8 @@ async function loadStaticDataLayers() {
 }
 
 document.getElementById('draftFileInput').addEventListener('change', onSiteSelectionDraftFile);
+
+void restoreLinkedDraftFileHandleFromIdb();
 
 const hadLocalDraft = restoreMapDrafts();
 renderAxisList();
