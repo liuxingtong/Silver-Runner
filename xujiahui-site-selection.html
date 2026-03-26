@@ -164,15 +164,33 @@
   }
 
   /* ── Site selection UI ── */
-  .toolbar{
+  .toolbar-wrap{
     position:fixed;top:72px;left:50%;transform:translateX(-50%);
+    z-index:1001;
+    display:flex;flex-direction:column;align-items:center;
+    gap:6px;
+  }
+  .toolbar{
     display:flex;gap:2px;
     background:var(--bg-panel);
     border:1px solid var(--border-subtle);
     border-radius:10px;padding:4px;
-    z-index:1001;
     backdrop-filter:blur(14px);
   }
+  .toolbar-draft-row{
+    display:flex;gap:6px;align-items:center;
+    background:var(--bg-panel);
+    border:1px solid var(--border-subtle);
+    border-radius:10px;padding:4px 8px;
+    backdrop-filter:blur(14px);
+  }
+  .toolbar-draft-btn{
+    padding:6px 12px;border:none;border-radius:7px;
+    font-family:inherit;font-size:10px;font-weight:500;
+    color:var(--text-secondary);background:rgba(255,255,255,0.04);
+    cursor:pointer;transition:all 0.2s;white-space:nowrap;
+  }
+  .toolbar-draft-btn:hover{color:var(--text-primary);background:rgba(255,255,255,0.08)}
   .toolbar button{
     padding:8px 14px;border:none;border-radius:7px;
     font-family:inherit;font-size:11px;font-weight:500;
@@ -190,7 +208,7 @@
   .toolbar .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
   .axis-dock{
-    position:fixed;top:100px;left:336px;
+    position:fixed;top:132px;left:336px;
     width:280px;max-height:calc(100vh - 240px);
     z-index:1000;
     pointer-events:none;
@@ -572,22 +590,29 @@
   </div>
 </div>
 
-<div class="toolbar">
-  <button type="button" id="btn-browse" class="mode-tab active" onclick="setMode('browse')">
-    <span class="dot" style="background:rgba(255,255,255,0.4)"></span>浏览
-  </button>
-  <button type="button" id="btn-axis" class="mode-tab" onclick="setMode('axis')">
-    <span class="dot" style="background:var(--magenta-bright)"></span>轴线绘制
-  </button>
-  <button type="button" id="btn-select-res" class="mode-tab" onclick="setMode('select_res')">
-    <span class="dot" style="background:var(--cyan)"></span>资源区
-  </button>
-  <button type="button" id="btn-select-pot" class="mode-tab" onclick="setMode('select_pot')">
-    <span class="dot" style="background:var(--magenta)"></span>潜力区
-  </button>
-  <button type="button" id="btn-add-subaxis" class="toolbar-subaxis" onclick="addSubAxis()" title="添加一条虚线副轴（自动进入轴线模式）">
-    <span class="dot" style="background:transparent;border:1px dashed #ff4dad;width:6px;height:6px"></span>新增副轴
-  </button>
+<div class="toolbar-wrap">
+  <div class="toolbar">
+    <button type="button" id="btn-browse" class="mode-tab active" onclick="setMode('browse')">
+      <span class="dot" style="background:rgba(255,255,255,0.4)"></span>浏览
+    </button>
+    <button type="button" id="btn-axis" class="mode-tab" onclick="setMode('axis')">
+      <span class="dot" style="background:var(--magenta-bright)"></span>轴线绘制
+    </button>
+    <button type="button" id="btn-select-res" class="mode-tab" onclick="setMode('select_res')">
+      <span class="dot" style="background:var(--cyan)"></span>资源区
+    </button>
+    <button type="button" id="btn-select-pot" class="mode-tab" onclick="setMode('select_pot')">
+      <span class="dot" style="background:var(--magenta)"></span>潜力区
+    </button>
+    <button type="button" id="btn-add-subaxis" class="toolbar-subaxis" onclick="addSubAxis()" title="添加一条虚线副轴（自动进入轴线模式）">
+      <span class="dot" style="background:transparent;border:1px dashed #ff4dad;width:6px;height:6px"></span>新增副轴
+    </button>
+  </div>
+  <div class="toolbar-draft-row">
+    <button type="button" class="toolbar-draft-btn" onclick="exportSiteSelectionDraft()" title="下载与仓库 data/site-selection-draft.json 同结构的 JSON">导出 JSON</button>
+    <button type="button" class="toolbar-draft-btn" onclick="document.getElementById('draftFileInput').click()" title="从文件恢复轴线与资源区/潜力区（会覆盖当前地图草稿）">导入 JSON</button>
+    <input type="file" id="draftFileInput" accept=".json,application/json" hidden />
+  </div>
 </div>
 
 <div class="axis-dock">
@@ -603,7 +628,7 @@
           点击轴线名称进入绘制 → 在地图上逐点点击 → 按 <b>Enter</b> 完成 / <b>Esc</b> 取消<br>
           主轴均为玫红<strong>实线</strong>（无顶点圆点）。<strong>商业 / 体育认知轴</strong>：轴名从<strong>最左端点</strong>向<strong>西</strong>引出，卡片整体落在研究区外；<strong>社会认知轴（V1 / V2 / V3）</strong>：每条均从最右端点向<strong>东</strong>引出至区外。<b>新增副轴</b> 为玫红<strong>虚线</strong>，无轴名标签<br>
           用地数据加载后，在<strong>研究区</strong>内显示全部<strong>OSM 用地</strong>填色（按标签类型配色）；POI 不参与地图打点，仍参与资源区 / 潜力区统计。<br>
-          每个多边形在地图质心处有常驻卡片，可折叠；轴线与两区会<strong>自动保存</strong>在本浏览器。
+          每个多边形在地图质心处有常驻卡片，可折叠；轴线与两区会<strong>自动保存</strong>在本浏览器。<strong>导出 JSON</strong> 后可保存为仓库内 <code style="font-size:9px">data/site-selection-draft.json</code> 并推送，GitHub Pages 等环境在<strong>无本地草稿</strong>时会自动加载该文件。
         </div>
       </div>
     </div>
@@ -1894,6 +1919,8 @@ let tempSelMarkers = null;
 let activeSelectionId = null;
 
 const LOCAL_STORAGE_KEY = 'xujiahui-site-selection-drafts-v1';
+/** 随仓库发布：无本地 localStorage 草稿时 fetch 此路径（可导出 JSON 后保存为该文件并 git push） */
+const STATIC_DRAFT_URL = 'data/site-selection-draft.json';
 
 const SEL_POLY_RESOURCE = {
   color: '#00bcd4',

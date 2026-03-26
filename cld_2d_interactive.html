@@ -43,6 +43,19 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
 
 #card-legend{top:56px;left:14px;max-width:220px;max-height:calc(100vh - 200px)}
 #card-loops{top:56px;right:14px;max-width:230px;max-height:calc(100vh - 200px)}
+#card-sd{
+  bottom:56px;right:14px;max-width:min(300px,calc(100vw - 28px));z-index:60;
+  max-height:calc(100vh - 100px);
+}
+#card-sd .sd-chart-wrap{margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
+#sd-canvas{display:block;width:100%;height:128px;border-radius:4px;background:rgba(0,0,0,0.38);border:1px solid rgba(233,30,140,0.15)}
+#card-sd .sd-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+#card-sd .sd-row label{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:0.3px}
+#card-sd button.sd-btn{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;background:var(--mag-s);border:1px solid var(--mag-d);color:var(--mag);border-radius:3px;cursor:pointer;letter-spacing:0.3px;transition:all 0.2s}
+#card-sd button.sd-btn:hover,#card-sd button.sd-btn.on{background:var(--mag);color:#fff}
+#card-sd .sd-legend{font-size:8px;color:var(--dim);line-height:1.5;margin-top:4px;font-family:'JetBrains Mono',monospace}
+#card-sd .sd-legend span{margin-right:8px;white-space:nowrap}
+#card-sd input[type=range]{width:100%;margin-top:4px;accent-color:var(--mag)}
 /* ── Tooltip ── */
 #tip{position:fixed;z-index:200;background:var(--ss);border:1px solid var(--mag);border-radius:6px;padding:10px 12px;font-size:11px;pointer-events:none;opacity:0;transition:opacity 0.15s;max-width:280px;box-shadow:0 0 20px var(--mag-g);line-height:1.6}
 #tip .tn{color:var(--mag);font-weight:700;margin-bottom:3px;font-size:12px}
@@ -53,7 +66,10 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
 .leg{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:50;display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:9px;background:var(--surface);padding:6px 14px;border-radius:16px;border:1px solid rgba(233,30,140,0.22);box-shadow:0 4px 20px rgba(0,0,0,0.5)}
 .leg i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
 
-@media(max-width:768px){.card{max-width:180px!important;font-size:10px;padding:8px 10px}.card .ch{font-size:10px}.leg{font-size:8px;gap:8px;padding:5px 10px}}
+@media(max-width:768px){
+  .card{max-width:180px!important;font-size:10px;padding:8px 10px}.card .ch{font-size:10px}.leg{font-size:8px;gap:8px;padding:5px 10px}
+  #card-sd{bottom:50px;right:8px;max-width:min(280px,calc(100vw - 16px))}
+}
 </style>
 </head>
 <body>
@@ -117,6 +133,39 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
       <tr><td style="color:#00e5ff">B5</td><td>文化摩擦 · 抑制</td></tr>
       <tr><td style="color:#00e5ff">B6</td><td>隔代锁定 · 抑制</td></tr>
     </table>
+  </div>
+</div>
+
+<!-- SD mini simulation (stock–flow sketch aligned with node eq. tooltips) -->
+<div class="card" id="card-sd">
+  <div class="ch" onclick="tog(this)">SD 迷你仿真 <span class="tg">−</span></div>
+  <div class="card-body">
+    <p style="font-size:10px;color:var(--dim);line-height:1.5;margin-bottom:6px">
+      与节点悬停方程一致的<strong style="color:var(--text)">归一化存量</strong>欧拉积分；对比 N18=0 与干预下关键量的轨迹。
+    </p>
+    <div class="sd-row">
+      <span style="font-size:9px;color:var(--dim)">N18</span>
+      <button type="button" class="sd-btn sd-n18 on" data-n18="0">无 0</button>
+      <button type="button" class="sd-btn sd-n18" data-n18="0.6">干预 0.6</button>
+    </div>
+    <div class="sd-row" style="margin-top:10px">
+      <button type="button" class="sd-btn" id="sd-run">运行</button>
+      <button type="button" class="sd-btn on" id="sd-pause">暂停</button>
+      <button type="button" class="sd-btn" id="sd-reset">复位</button>
+    </div>
+    <label style="display:block;margin-top:10px"><span class="sd-row" style="margin:0">仿真速度 <span id="sd-speed-lbl" style="color:var(--text)">1×</span></span>
+      <input type="range" id="sd-speed" min="0.25" max="3" step="0.25" value="1">
+    </label>
+    <div class="sd-chart-wrap">
+      <canvas id="sd-canvas" width="520" height="256" aria-label="SD 状态时间序列"></canvas>
+      <div class="sd-legend">
+        <span style="color:#e91e8c">■ N02</span>
+        <span style="color:#00e5ff">■ N09</span>
+        <span style="color:#39ff85">■ N15</span>
+        <span style="color:#ffb300">■ N_IG</span>
+        <span style="color:#ddd8e4">■ N19</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -650,6 +699,16 @@ function render(){
   } else {
     tip.style.opacity='0';
   }
+
+  if (typeof sdRunning !== 'undefined' && sdRunning) {
+    const spdEl = document.getElementById('sd-speed');
+    const spd = spdEl ? parseFloat(spdEl.value, 10) || 1 : 1;
+    const substeps = 6;
+    const dt = (0.03 * spd) / substeps;
+    for (let si = 0; si < substeps; si++) sdStep(dt);
+    sdPushHistory();
+    sdDrawChart();
+  }
 }
 
 // ══════════════════════════════════════════
@@ -660,6 +719,207 @@ function tog(el){
   card.classList.toggle('collapsed');
   el.querySelector('.tg').textContent=card.classList.contains('collapsed')?'+':'−';
 }
+
+// ══════════════════════════════════════════
+// SD 迷你仿真（与节点 N18 注释：α β γ δ 及各方程结构对齐的归一化存量）
+// ══════════════════════════════════════════
+const SD = {
+  alpha: 2.0, beta: 0.15, gamma: 0.6, delta: 0.5, tau: 0.48,
+  exo: { N01: 0.5, N03: 0.52, N05: 0.48, N07: 0.5, N14: 0.52, N17b: 0.48, N_YP: 0.52, N_GC: 0.38 },
+  k02_social: 0.85, k02_access: 0.52, k02_comfort: 0.55, k02_sat: 0.028,
+  base09: 0.26, k09_N07: 0.46, k09_N02: 0.38, k09_NYP: 0.24,
+  N10b: 0.14, k10_NYP: 0.58,
+  k14: 0.38, k17: 0.48, k15_decay: 0.11,
+  k16_N15: 0.26, k16_GC: 0.2, k16_decay: 0.14,
+  k19_in: 0.42, k19_mix: 0.3, k19_decay: 0.11,
+  k20_in: 0.22, k20_decay: 0.13,
+};
+let sdN18 = 0;
+let sdRunning = false;
+let sdLogicalW = 260, sdLogicalH = 128;
+const sdCan = document.getElementById('sd-canvas');
+const sdCtx = sdCan.getContext('2d');
+const sdHist = { N02: [], N09: [], N15: [], N_IG: [], N19: [], max: 220 };
+
+function sdInitialState(){
+  const y0 = 0.36;
+  return { N02: y0, N09: y0, N10: 0.32, N15: y0, N16: y0, N_IG: y0 * 0.9, N19: 0.08, N20: y0 * 0.85 };
+}
+let sdY = sdInitialState();
+
+function clip01(x, hi = 1.45){
+  return Math.max(0, Math.min(hi, x));
+}
+
+function sdStep(dt){
+  const e = SD.exo;
+  const N18 = sdN18;
+  const y = sdY;
+  const N17_eff = e.N17b * (1 - SD.delta * N18) + 0.15 * y.N10;
+  const N10_eq = (SD.N10b + SD.k10_NYP * e.N_YP) * (1 - SD.gamma * N18);
+  const dN10 = 0.3 * (N10_eq - y.N10);
+  const N09_eq = SD.base09 + SD.k09_N07 * e.N07 - SD.k09_N02 * y.N02 - SD.k09_NYP * e.N_YP - 0.1 * y.N10;
+  const dN09 = 0.2 * (N09_eq - y.N09);
+  const N02_eq = SD.k02_social * e.N01 * e.N03 + SD.k02_access * e.N05 + SD.k02_comfort * y.N09;
+  const dN02 = 0.15 * (N02_eq - y.N02) - SD.k02_sat * y.N02 * y.N02;
+  const igT = e.N_YP * (1 + SD.alpha * N18);
+  const dN_IG = SD.tau * (igT - y.N_IG);
+  const dN15 = SD.k14 * e.N14 - SD.k17 * N17_eff * y.N15 + SD.beta * y.N_IG - SD.k15_decay * y.N15;
+  const dN16 = SD.k16_N15 * y.N15 - SD.k16_GC * e.N_GC - SD.k16_decay * y.N16;
+  const dN19 = SD.k19_in * y.N02 * N18 - SD.k19_mix * N18 * y.N19 - SD.k19_decay * y.N19;
+  const dN20 = SD.k20_in * y.N19 - SD.k20_decay * y.N20;
+
+  y.N10 += dN10 * dt;
+  y.N09 += dN09 * dt;
+  y.N02 += dN02 * dt;
+  y.N_IG += dN_IG * dt;
+  y.N15 += dN15 * dt;
+  y.N16 += dN16 * dt;
+  y.N19 += dN19 * dt;
+  y.N20 += dN20 * dt;
+
+  y.N10 = clip01(y.N10, 1.6);
+  y.N09 = clip01(y.N09);
+  y.N02 = clip01(y.N02);
+  y.N_IG = clip01(y.N_IG);
+  y.N15 = clip01(y.N15);
+  y.N16 = clip01(y.N16);
+  y.N19 = clip01(y.N19, 1.2);
+  y.N20 = clip01(y.N20);
+}
+
+function sdPushHistory(){
+  const { N02, N09, N15, N_IG, N19 } = sdY;
+  const push = (arr, v) => { arr.push(v); if (arr.length > sdHist.max) arr.shift(); };
+  push(sdHist.N02, N02);
+  push(sdHist.N09, N09);
+  push(sdHist.N15, N15);
+  push(sdHist.N_IG, N_IG);
+  push(sdHist.N19, N19);
+}
+
+function sdClearHistory(){
+  sdHist.N02.length = 0;
+  sdHist.N09.length = 0;
+  sdHist.N15.length = 0;
+  sdHist.N_IG.length = 0;
+  sdHist.N19.length = 0;
+}
+
+function resizeSdCanvas(){
+  if (!sdCan) return;
+  const wrap = sdCan.parentElement;
+  const w = Math.max(180, Math.min(520, (wrap && wrap.clientWidth) ? wrap.clientWidth - 4 : 260));
+  const h = 128;
+  const d = Math.min(devicePixelRatio || 1, 2);
+  sdLogicalW = w;
+  sdLogicalH = h;
+  sdCan.width = Math.round(w * d);
+  sdCan.height = Math.round(h * d);
+  sdCan.style.width = w + 'px';
+  sdCan.style.height = h + 'px';
+  sdCtx.setTransform(d, 0, 0, d, 0, 0);
+  sdDrawChart();
+}
+
+function sdDrawChart(){
+  if (!sdCtx) return;
+  const w = sdLogicalW, h = sdLogicalH;
+  sdCtx.clearRect(0, 0, w, h);
+  sdCtx.fillStyle = 'rgba(0,0,0,0.2)';
+  sdCtx.fillRect(0, 0, w, h);
+  const series = [
+    { key: 'N02', col: '#e91e8c' },
+    { key: 'N09', col: '#00e5ff' },
+    { key: 'N15', col: '#39ff85' },
+    { key: 'N_IG', col: '#ffb300' },
+    { key: 'N19', col: 'rgba(220,216,228,0.92)' },
+  ];
+  const n = sdHist.N02.length;
+  if (n < 2) {
+    sdCtx.font = '500 10px JetBrains Mono';
+    sdCtx.fillStyle = 'rgba(122,116,136,0.9)';
+    sdCtx.textAlign = 'center';
+    sdCtx.fillText('运行后显示轨迹', w / 2, h / 2);
+    return;
+  }
+  let vmin = Infinity, vmax = -Infinity;
+  for (const s of series) {
+    for (const v of sdHist[s.key]) {
+      vmin = Math.min(vmin, v);
+      vmax = Math.max(vmax, v);
+    }
+  }
+  if (vmax - vmin < 1e-6) { vmin -= 0.05; vmax += 0.05; }
+  const pad = 6;
+  const gw = w - pad * 2, gh = h - pad * 2;
+  const mapY = (v) => pad + gh - ((v - vmin) / (vmax - vmin)) * gh;
+  const mapX = (i) => pad + (i / (n - 1)) * gw;
+  sdCtx.strokeStyle = 'rgba(233,30,140,0.12)';
+  sdCtx.lineWidth = 1;
+  for (let g = 0; g <= 4; g++) {
+    const yy = pad + (g / 4) * gh;
+    sdCtx.beginPath();
+    sdCtx.moveTo(pad, yy);
+    sdCtx.lineTo(pad + gw, yy);
+    sdCtx.stroke();
+  }
+  for (const s of series) {
+    const arr = sdHist[s.key];
+    sdCtx.beginPath();
+    sdCtx.strokeStyle = s.col;
+    sdCtx.lineWidth = 1.35;
+    for (let i = 0; i < n; i++) {
+      const x = mapX(i), y = mapY(arr[i]);
+      if (i === 0) sdCtx.moveTo(x, y);
+      else sdCtx.lineTo(x, y);
+    }
+    sdCtx.stroke();
+  }
+  sdCtx.font = '500 8px JetBrains Mono';
+  sdCtx.fillStyle = 'rgba(122,116,136,0.85)';
+  sdCtx.textAlign = 'left';
+  sdCtx.textBaseline = 'top';
+  sdCtx.fillText('N18=' + sdN18.toFixed(1), pad, 2);
+}
+
+function sdUpdateRunButtons(){
+  const runBtn = document.getElementById('sd-run');
+  const pauseBtn = document.getElementById('sd-pause');
+  if (runBtn) runBtn.classList.toggle('on', sdRunning);
+  if (pauseBtn) pauseBtn.classList.toggle('on', !sdRunning);
+}
+
+(function initSdUi(){
+  resizeSdCanvas();
+  document.querySelectorAll('.sd-n18').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sdN18 = parseFloat(btn.getAttribute('data-n18'), 10) || 0;
+      document.querySelectorAll('.sd-n18').forEach(b => b.classList.toggle('on', b === btn));
+      sdDrawChart();
+    });
+  });
+  const runBtn = document.getElementById('sd-run');
+  const pauseBtn = document.getElementById('sd-pause');
+  const resetBtn = document.getElementById('sd-reset');
+  const speedEl = document.getElementById('sd-speed');
+  const speedLbl = document.getElementById('sd-speed-lbl');
+  if (runBtn) runBtn.addEventListener('click', () => { sdRunning = true; sdUpdateRunButtons(); });
+  if (pauseBtn) pauseBtn.addEventListener('click', () => { sdRunning = false; sdUpdateRunButtons(); });
+  if (resetBtn) resetBtn.addEventListener('click', () => {
+    sdRunning = false;
+    sdY = sdInitialState();
+    sdClearHistory();
+    sdUpdateRunButtons();
+    sdDrawChart();
+  });
+  if (speedEl && speedLbl) {
+    speedEl.addEventListener('input', () => { speedLbl.textContent = speedEl.value + '×'; });
+  }
+  sdUpdateRunButtons();
+  sdDrawChart();
+  window.addEventListener('resize', resizeSdCanvas);
+})();
 
 render();
 </script>
