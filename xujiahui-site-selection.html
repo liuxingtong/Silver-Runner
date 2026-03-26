@@ -2093,7 +2093,7 @@ async function linkSiteSelectionDraftFileSave() {
   try {
     const handle = await window.showSaveFilePicker({
       suggestedName: 'site-selection-draft.json',
-      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } } }]
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
     });
     const perm = await handle.requestPermission({ mode: 'readwrite' });
     if (perm !== 'granted') {
