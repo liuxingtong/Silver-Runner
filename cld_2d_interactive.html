@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>因果回路建模 · CLD 二维</title>
+<title>因果回路建模与系统动力学仿真 · CLD 二维</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -14,10 +14,11 @@
   --text:#ddd8e4;--dim:#7a7488;--faint:#3a3348;--border:rgba(233,30,140,0.14);
 }
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-serif}
-canvas#cv{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+/* 主 CLD 画布止于底栏之上，由 JS 写入高度 */
+canvas#cv{position:fixed;top:0;left:0;width:100%;z-index:0}
 /* 节点旁标注卡片：高于四角 .card(50)，低于顶栏与 tooltip；不拦截拖拽/平移 */
-canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointer-events:none}
-#node-label-layer{position:fixed;inset:0;z-index:120;pointer-events:none}
+canvas#cv-labels{position:fixed;top:0;left:0;width:100%;z-index:55;pointer-events:none}
+#node-label-layer{position:fixed;top:0;left:0;width:100%;z-index:120;pointer-events:none}
 .node-label-chip{position:fixed;transform:translate(-9999px,-9999px);padding:5px 7px;border-radius:6px;border:1.4px solid rgba(233,30,140,0.8);background:rgba(20,14,32,0.96);box-shadow:0 2px 12px rgba(233,30,140,0.35);line-height:1.15;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis}
 .node-label-chip .id{display:block;font:600 9px 'JetBrains Mono',monospace;margin-bottom:2px}
 .node-label-chip .nm{display:block;font:400 8px 'Noto Sans SC',sans-serif;color:rgba(240,236,248,0.96);overflow:hidden;text-overflow:ellipsis}
@@ -43,32 +44,48 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
 
 #card-legend{top:56px;left:14px;max-width:220px;max-height:calc(100vh - 200px)}
 #card-loops{top:56px;right:14px;max-width:230px;max-height:calc(100vh - 200px)}
-#card-sd{
-  bottom:56px;right:14px;max-width:min(300px,calc(100vw - 28px));z-index:60;
-  max-height:calc(100vh - 100px);
+:root{--sd-dock-h:min(168px,32vh)}
+/* 底部 SD 双窗：不占 CLD 主画布角区 */
+#sd-dock{
+  position:fixed;left:0;right:0;bottom:0;z-index:58;
+  height:var(--sd-dock-h);min-height:140px;max-height:200px;
+  background:linear-gradient(0deg,rgba(6,5,10,0.97),rgba(10,8,16,0.93));
+  border-top:1px solid rgba(233,30,140,0.28);
+  box-shadow:0 -6px 28px rgba(0,0,0,0.55);
+  display:flex;flex-direction:column;padding:6px 10px 8px;gap:5px;
+  pointer-events:auto;
 }
-#card-sd .sd-chart-wrap{margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
-#sd-canvas{display:block;width:100%;height:128px;border-radius:4px;background:rgba(0,0,0,0.38);border:1px solid rgba(233,30,140,0.15)}
-#card-sd .sd-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
-#card-sd .sd-row label{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:0.3px}
-#card-sd button.sd-btn{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;background:var(--mag-s);border:1px solid var(--mag-d);color:var(--mag);border-radius:3px;cursor:pointer;letter-spacing:0.3px;transition:all 0.2s}
-#card-sd button.sd-btn:hover,#card-sd button.sd-btn.on{background:var(--mag);color:#fff}
-#card-sd .sd-legend{font-size:8px;color:var(--dim);line-height:1.5;margin-top:4px;font-family:'JetBrains Mono',monospace}
-#card-sd .sd-legend span{margin-right:8px;white-space:nowrap}
-#card-sd input[type=range]{width:100%;margin-top:4px;accent-color:var(--mag)}
+#sd-dock .sd-dock-hd{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;flex-shrink:0}
+#sd-dock .sd-dock-title{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.8px;color:var(--mag);text-transform:uppercase}
+#sd-dock .sd-dock-note{font-size:9px;color:var(--dim);line-height:1.35;max-width:520px}
+#sd-dock .sd-dock-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+#sd-dock button.sd-btn{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;background:var(--mag-s);border:1px solid var(--mag-d);color:var(--mag);border-radius:3px;cursor:pointer;letter-spacing:0.3px;transition:all 0.2s}
+#sd-dock button.sd-btn:hover,#sd-dock button.sd-btn.on{background:var(--mag);color:#fff}
+#sd-dock .sd-speed-wrap{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim)}
+#sd-dock .sd-speed-wrap input[type=range]{width:72px;accent-color:var(--mag);margin:0}
+#sd-dock .sd-dock-panes{display:flex;gap:8px;flex:1;min-height:0}
+#sd-dock .sd-pane{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;border:1px solid rgba(233,30,140,0.14);border-radius:6px;padding:4px 6px;background:rgba(0,0,0,0.22)}
+#sd-dock .sd-pane-cap{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--text);letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sd-dock .sd-pane-cap em{font-style:normal;color:var(--amber)}
+#sd-dock canvas.sd-canvas{display:block;width:100%;flex:1;min-height:56px;border-radius:4px;background:rgba(0,0,0,0.38);border:1px solid rgba(233,30,140,0.12)}
+#sd-dock .sd-legend{font-size:7px;color:var(--dim);line-height:1.35;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+#sd-dock .sd-legend .row{display:flex;flex-wrap:wrap;gap:0 8px}
+#sd-dock .sd-legend span{white-space:nowrap}
 /* ── Tooltip ── */
 #tip{position:fixed;z-index:200;background:var(--ss);border:1px solid var(--mag);border-radius:6px;padding:10px 12px;font-size:11px;pointer-events:none;opacity:0;transition:opacity 0.15s;max-width:280px;box-shadow:0 0 20px var(--mag-g);line-height:1.6}
 #tip .tn{color:var(--mag);font-weight:700;margin-bottom:3px;font-size:12px}
 #tip .td{color:var(--dim)}
 #tip .te{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:9px;margin-top:4px;padding:4px 6px;background:rgba(233,30,140,0.06);border-radius:3px;line-height:1.5}
 
-/* ── Bottom legend bar ── */
-.leg{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:50;display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:9px;background:var(--surface);padding:6px 14px;border-radius:16px;border:1px solid rgba(233,30,140,0.22);box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+/* ── Bottom legend bar（抬升避免与 SD 底栏重叠）── */
+.leg{position:fixed;bottom:calc(var(--sd-dock-h) + 8px);left:50%;transform:translateX(-50%);z-index:50;display:flex;gap:14px;font-family:'JetBrains Mono',monospace;font-size:9px;background:var(--surface);padding:6px 14px;border-radius:16px;border:1px solid rgba(233,30,140,0.22);box-shadow:0 4px 20px rgba(0,0,0,0.5)}
 .leg i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
 
 @media(max-width:768px){
   .card{max-width:180px!important;font-size:10px;padding:8px 10px}.card .ch{font-size:10px}.leg{font-size:8px;gap:8px;padding:5px 10px}
-  #card-sd{bottom:50px;right:8px;max-width:min(280px,calc(100vw - 16px))}
+  :root{--sd-dock-h:min(200px,38vh)}
+  #sd-dock .sd-dock-panes{flex-direction:column}
+  #sd-dock .sd-pane{min-height:72px}
 }
 </style>
 </head>
@@ -79,8 +96,8 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
 
 <div class="bar">
   <div>
-    <h1>因果回路建模 · CLD 二维</h1>
-    <div class="sub">CLD 二维交互 · CAUSAL LOOP · MVR v4 · 2026.03</div>
+    <h1>因果回路建模与系统动力学仿真</h1>
+    <div class="sub">CLD 二维交互 · SD 双情景同步积分 · MVR v4 · 2026.03</div>
   </div>
   <div class="view-btns">
     <button class="on" onclick="setView('all')">全部</button>
@@ -136,34 +153,50 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
   </div>
 </div>
 
-<!-- SD simulation (stock–flow sketch aligned with node eq. tooltips) -->
-<div class="card" id="card-sd">
-  <div class="ch" onclick="tog(this)">SD 仿真 <span class="tg">−</span></div>
-  <div class="card-body">
-    <p style="font-size:10px;color:var(--dim);line-height:1.5;margin-bottom:6px">
-      与节点悬停方程一致的<strong style="color:var(--text)">归一化存量</strong>欧拉积分；外生量叠加弱多频节律，轨迹持续波动而非单点收敛；可对比 N18=0 与干预。
-    </p>
-    <div class="sd-row">
-      <span style="font-size:9px;color:var(--dim)">N18</span>
-      <button type="button" class="sd-btn sd-n18 on" data-n18="0">无 0</button>
-      <button type="button" class="sd-btn sd-n18" data-n18="0.6">干预 0.6</button>
-    </div>
-    <div class="sd-row" style="margin-top:10px">
-      <button type="button" class="sd-btn" id="sd-run">运行</button>
+<!-- SD 双窗：与节点方程一致的归一化存量；同一时钟与外生节律，N18 固定 0 / 0.6 并列对比 -->
+<div id="sd-dock" aria-label="系统动力学仿真双窗">
+  <div class="sd-dock-hd">
+    <span class="sd-dock-title">SD · 双情景</span>
+    <span class="sd-dock-note">与悬停方程一致的欧拉积分；外生弱多频节律；<strong style="color:var(--text)">启动</strong>后两窗同步推进。</span>
+    <div class="sd-dock-ctrl">
+      <button type="button" class="sd-btn" id="sd-run">启动</button>
       <button type="button" class="sd-btn on" id="sd-pause">暂停</button>
       <button type="button" class="sd-btn" id="sd-reset">复位</button>
+      <div class="sd-speed-wrap">
+        <span>速度</span><span id="sd-speed-lbl" style="color:var(--text)">1×</span>
+        <input type="range" id="sd-speed" min="0.25" max="3" step="0.25" value="1" aria-label="仿真速度">
+      </div>
     </div>
-    <label style="display:block;margin-top:10px"><span class="sd-row" style="margin:0">仿真速度 <span id="sd-speed-lbl" style="color:var(--text)">1×</span></span>
-      <input type="range" id="sd-speed" min="0.25" max="3" step="0.25" value="1">
-    </label>
-    <div class="sd-chart-wrap">
-      <canvas id="sd-canvas" width="520" height="256" aria-label="SD 状态时间序列"></canvas>
-      <div class="sd-legend">
-        <span style="color:#e91e8c">■ N02</span>
-        <span style="color:#00e5ff">■ N09</span>
-        <span style="color:#39ff85">■ N15</span>
-        <span style="color:#ffb300">■ N_IG</span>
-        <span style="color:#ddd8e4">■ N19</span>
+  </div>
+  <div class="sd-dock-panes">
+    <div class="sd-pane">
+      <div class="sd-pane-cap">情景 A · <em>N18=0</em> 无干预</div>
+      <canvas class="sd-canvas" id="sd-canvas-a" width="320" height="96" aria-label="无干预 SD 轨迹"></canvas>
+      <div class="sd-legend" aria-hidden="true">
+        <div class="row">
+          <span style="color:#e91e8c">N02</span><span>老年人聚集</span>
+          <span style="color:#00e5ff">N09</span><span>街道舒适</span>
+          <span style="color:#39ff85">N15</span><span>认知激活</span>
+        </div>
+        <div class="row">
+          <span style="color:#ffb300">N_IG</span><span>代际互动</span>
+          <span style="color:rgba(220,216,228,0.92)">N19</span><span>行为数据密度</span>
+        </div>
+      </div>
+    </div>
+    <div class="sd-pane">
+      <div class="sd-pane-cap">情景 B · <em>N18=0.6</em> 人机干预</div>
+      <canvas class="sd-canvas" id="sd-canvas-b" width="320" height="96" aria-label="有干预 SD 轨迹"></canvas>
+      <div class="sd-legend" aria-hidden="true">
+        <div class="row">
+          <span style="color:#e91e8c">N02</span><span>老年人聚集</span>
+          <span style="color:#00e5ff">N09</span><span>街道舒适</span>
+          <span style="color:#39ff85">N15</span><span>认知激活</span>
+        </div>
+        <div class="row">
+          <span style="color:#ffb300">N_IG</span><span>代际互动</span>
+          <span style="color:rgba(220,216,228,0.92)">N19</span><span>行为数据密度</span>
+        </div>
       </div>
     </div>
   </div>
@@ -277,15 +310,23 @@ const ctx = cv.getContext('2d');
 const cvLab = document.getElementById('cv-labels');
 const ctxLab = cvLab.getContext('2d');
 let W, H, dpr;
+function clViewInsetBottom(){
+  const dock = document.getElementById('sd-dock');
+  const h = dock ? dock.offsetHeight : 0;
+  return h > 0 ? h : Math.min(168, Math.round(window.innerHeight * 0.32));
+}
 function resize(){
   dpr = Math.min(devicePixelRatio, 2);
-  W = window.innerWidth; H = window.innerHeight;
+  const insetB = clViewInsetBottom();
+  W = window.innerWidth; H = Math.max(200, window.innerHeight - insetB);
   cv.width = W*dpr; cv.height = H*dpr;
   cv.style.width = W+'px'; cv.style.height = H+'px';
   ctx.setTransform(dpr,0,0,dpr,0,0);
   cvLab.width = W*dpr; cvLab.height = H*dpr;
   cvLab.style.width = W+'px'; cvLab.style.height = H+'px';
   ctxLab.setTransform(dpr,0,0,dpr,0,0);
+  const nl = document.getElementById('node-label-layer');
+  if (nl) nl.style.height = H + 'px';
 }
 resize();
 window.addEventListener('resize', resize);
@@ -711,9 +752,9 @@ function render(){
     const spd = spdEl ? parseFloat(spdEl.value, 10) || 1 : 1;
     const substeps = 6;
     const dt = (0.03 * spd) / substeps;
-    for (let si = 0; si < substeps; si++) sdStep(dt);
-    sdPushHistory();
-    sdDrawChart();
+    for (let si = 0; si < substeps; si++) sdAdvanceBoth(dt);
+    sdPushAllHistory();
+    sdDrawAllCharts();
   }
 }
 
@@ -740,19 +781,26 @@ const SD = {
   k19_in: 0.42, k19_mix: 0.3, k19_decay: 0.11,
   k20_in: 0.22, k20_decay: 0.13,
 };
-let sdN18 = 0;
 let sdTime = 0;
 let sdRunning = false;
-let sdLogicalW = 260, sdLogicalH = 128;
-const sdCan = document.getElementById('sd-canvas');
-const sdCtx = sdCan.getContext('2d');
-const sdHist = { N02: [], N09: [], N15: [], N_IG: [], N19: [], max: 220 };
+
+function makeSdHist(){
+  return { N02: [], N09: [], N15: [], N_IG: [], N19: [], max: 220 };
+}
+const sdHist0 = makeSdHist();
+const sdHist1 = makeSdHist();
+
+const sdCanA = document.getElementById('sd-canvas-a');
+const sdCanB = document.getElementById('sd-canvas-b');
+const sdCtxA = sdCanA && sdCanA.getContext('2d');
+const sdCtxB = sdCanB && sdCanB.getContext('2d');
 
 function sdInitialState(){
   const y0 = 0.36;
   return { N02: y0, N09: y0, N10: 0.32, N15: y0, N16: y0, N_IG: y0 * 0.9, N19: 0.08, N20: y0 * 0.85 };
 }
-let sdY = sdInitialState();
+let sdY0 = sdInitialState();
+let sdY1 = sdInitialState();
 
 function clip01(x, hi = 1.45){
   return Math.max(0, Math.min(hi, x));
@@ -779,11 +827,7 @@ function sdExoAtTime(t){
   };
 }
 
-function sdStep(dt){
-  sdTime += dt;
-  const e = sdExoAtTime(sdTime);
-  const N18 = sdN18;
-  const y = sdY;
+function sdIntegrateStep(y, N18, dt, e){
   const N17_eff = e.N17b * (1 - SD.delta * N18) + 0.15 * y.N10;
   const N10_eq = (SD.N10b + SD.k10_NYP * e.N_YP) * (1 - SD.gamma * N18);
   const dN10 = 0.3 * (N10_eq - y.N10);
@@ -817,46 +861,71 @@ function sdStep(dt){
   y.N20 = clip01(y.N20);
 }
 
-function sdPushHistory(){
-  const { N02, N09, N15, N_IG, N19 } = sdY;
-  const push = (arr, v) => { arr.push(v); if (arr.length > sdHist.max) arr.shift(); };
-  push(sdHist.N02, N02);
-  push(sdHist.N09, N09);
-  push(sdHist.N15, N15);
-  push(sdHist.N_IG, N_IG);
-  push(sdHist.N19, N19);
+/** 同一仿真时刻 t 的外生输入，两情景同步推进，便于对比 */
+function sdAdvanceBoth(dt){
+  sdTime += dt;
+  const e = sdExoAtTime(sdTime);
+  sdIntegrateStep(sdY0, 0, dt, e);
+  sdIntegrateStep(sdY1, 0.6, dt, e);
 }
 
-function sdClearHistory(){
-  sdHist.N02.length = 0;
-  sdHist.N09.length = 0;
-  sdHist.N15.length = 0;
-  sdHist.N_IG.length = 0;
-  sdHist.N19.length = 0;
+function sdPushHistory(hist, y){
+  const { N02, N09, N15, N_IG, N19 } = y;
+  const push = (arr, v) => { arr.push(v); if (arr.length > hist.max) arr.shift(); };
+  push(hist.N02, N02);
+  push(hist.N09, N09);
+  push(hist.N15, N15);
+  push(hist.N_IG, N_IG);
+  push(hist.N19, N19);
+}
+
+function sdPushAllHistory(){
+  sdPushHistory(sdHist0, sdY0);
+  sdPushHistory(sdHist1, sdY1);
+}
+
+function sdClearAllHistory(){
+  for (const h of [sdHist0, sdHist1]) {
+    h.N02.length = 0;
+    h.N09.length = 0;
+    h.N15.length = 0;
+    h.N_IG.length = 0;
+    h.N19.length = 0;
+  }
 }
 
 function resizeSdCanvas(){
-  if (!sdCan) return;
-  const wrap = sdCan.parentElement;
-  const w = Math.max(180, Math.min(520, (wrap && wrap.clientWidth) ? wrap.clientWidth - 4 : 260));
-  const h = 128;
-  const d = Math.min(devicePixelRatio || 1, 2);
-  sdLogicalW = w;
-  sdLogicalH = h;
-  sdCan.width = Math.round(w * d);
-  sdCan.height = Math.round(h * d);
-  sdCan.style.width = w + 'px';
-  sdCan.style.height = h + 'px';
-  sdCtx.setTransform(d, 0, 0, d, 0, 0);
-  sdDrawChart();
+  [sdCanA, sdCanB].forEach(can => {
+    if (!can) return;
+    const pane = can.closest('.sd-pane');
+    const pw = Math.max(100, (pane ? pane.clientWidth : 200) - 14);
+    const cap = pane && pane.querySelector('.sd-pane-cap');
+    const leg = pane && pane.querySelector('.sd-legend');
+    const overhead = (cap ? cap.offsetHeight : 18) + (leg ? leg.offsetHeight : 26) + 12;
+    const ph = pane ? pane.clientHeight : 100;
+    const h = Math.max(48, Math.min(102, ph - overhead));
+    const w = pw;
+    const d = Math.min(devicePixelRatio || 1, 2);
+    can.width = Math.round(w * d);
+    can.height = Math.round(h * d);
+    can.style.width = w + 'px';
+    can.style.height = h + 'px';
+    can._sdLogicalW = w;
+    can._sdLogicalH = h;
+    const ctx = can.getContext('2d');
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+  });
+  sdDrawAllCharts();
 }
 
-function sdDrawChart(){
-  if (!sdCtx) return;
-  const w = sdLogicalW, h = sdLogicalH;
-  sdCtx.clearRect(0, 0, w, h);
-  sdCtx.fillStyle = 'rgba(0,0,0,0.2)';
-  sdCtx.fillRect(0, 0, w, h);
+function sdDrawChart(ctx, hist, n18Val){
+  if (!ctx) return;
+  const can = ctx.canvas;
+  const w = can._sdLogicalW || 200;
+  const h = can._sdLogicalH || 72;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.fillRect(0, 0, w, h);
   const series = [
     { key: 'N02', col: '#e91e8c' },
     { key: 'N09', col: '#00e5ff' },
@@ -864,52 +933,59 @@ function sdDrawChart(){
     { key: 'N_IG', col: '#ffb300' },
     { key: 'N19', col: 'rgba(220,216,228,0.92)' },
   ];
-  const n = sdHist.N02.length;
+  const n = hist.N02.length;
   if (n < 2) {
-    sdCtx.font = '500 10px JetBrains Mono';
-    sdCtx.fillStyle = 'rgba(122,116,136,0.9)';
-    sdCtx.textAlign = 'center';
-    sdCtx.fillText('运行后显示轨迹', w / 2, h / 2);
+    ctx.font = '500 9px JetBrains Mono, "Noto Sans SC", sans-serif';
+    ctx.fillStyle = 'rgba(122,116,136,0.9)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('启动后显示轨迹', w / 2, h / 2);
     return;
   }
   let vmin = Infinity, vmax = -Infinity;
   for (const s of series) {
-    for (const v of sdHist[s.key]) {
+    for (const v of hist[s.key]) {
       vmin = Math.min(vmin, v);
       vmax = Math.max(vmax, v);
     }
   }
   if (vmax - vmin < 1e-6) { vmin -= 0.05; vmax += 0.05; }
-  const pad = 6;
-  const gw = w - pad * 2, gh = h - pad * 2;
+  const pad = 5;
+  const topPad = 10;
+  const gw = w - pad * 2, gh = h - pad - topPad;
   const mapY = (v) => pad + gh - ((v - vmin) / (vmax - vmin)) * gh;
   const mapX = (i) => pad + (i / (n - 1)) * gw;
-  sdCtx.strokeStyle = 'rgba(233,30,140,0.12)';
-  sdCtx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(233,30,140,0.12)';
+  ctx.lineWidth = 1;
   for (let g = 0; g <= 4; g++) {
     const yy = pad + (g / 4) * gh;
-    sdCtx.beginPath();
-    sdCtx.moveTo(pad, yy);
-    sdCtx.lineTo(pad + gw, yy);
-    sdCtx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pad, yy);
+    ctx.lineTo(pad + gw, yy);
+    ctx.stroke();
   }
   for (const s of series) {
-    const arr = sdHist[s.key];
-    sdCtx.beginPath();
-    sdCtx.strokeStyle = s.col;
-    sdCtx.lineWidth = 1.35;
+    const arr = hist[s.key];
+    ctx.beginPath();
+    ctx.strokeStyle = s.col;
+    ctx.lineWidth = 1.25;
     for (let i = 0; i < n; i++) {
-      const x = mapX(i), y = mapY(arr[i]);
-      if (i === 0) sdCtx.moveTo(x, y);
-      else sdCtx.lineTo(x, y);
+      const x = mapX(i), yv = mapY(arr[i]);
+      if (i === 0) ctx.moveTo(x, yv);
+      else ctx.lineTo(x, yv);
     }
-    sdCtx.stroke();
+    ctx.stroke();
   }
-  sdCtx.font = '500 8px JetBrains Mono';
-  sdCtx.fillStyle = 'rgba(122,116,136,0.85)';
-  sdCtx.textAlign = 'left';
-  sdCtx.textBaseline = 'top';
-  sdCtx.fillText('N18=' + sdN18.toFixed(1), pad, 2);
+  ctx.font = '500 7px JetBrains Mono, monospace';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(122,116,136,0.8)';
+  ctx.fillText('N18=' + n18Val.toFixed(1), w - pad, 1);
+}
+
+function sdDrawAllCharts(){
+  if (sdCtxA) sdDrawChart(sdCtxA, sdHist0, 0);
+  if (sdCtxB) sdDrawChart(sdCtxB, sdHist1, 0.6);
 }
 
 function sdUpdateRunButtons(){
@@ -920,14 +996,13 @@ function sdUpdateRunButtons(){
 }
 
 (function initSdUi(){
+  const dock = document.getElementById('sd-dock');
   resizeSdCanvas();
-  document.querySelectorAll('.sd-n18').forEach(btn => {
-    btn.addEventListener('click', () => {
-      sdN18 = parseFloat(btn.getAttribute('data-n18'), 10) || 0;
-      document.querySelectorAll('.sd-n18').forEach(b => b.classList.toggle('on', b === btn));
-      sdDrawChart();
-    });
-  });
+  if (dock && typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => { resizeSdCanvas(); if (typeof resize === 'function') resize(); });
+    ro.observe(dock);
+  }
+  requestAnimationFrame(() => { if (typeof resize === 'function') resize(); resizeSdCanvas(); });
   const runBtn = document.getElementById('sd-run');
   const pauseBtn = document.getElementById('sd-pause');
   const resetBtn = document.getElementById('sd-reset');
@@ -938,16 +1013,17 @@ function sdUpdateRunButtons(){
   if (resetBtn) resetBtn.addEventListener('click', () => {
     sdRunning = false;
     sdTime = 0;
-    sdY = sdInitialState();
-    sdClearHistory();
+    sdY0 = sdInitialState();
+    sdY1 = sdInitialState();
+    sdClearAllHistory();
     sdUpdateRunButtons();
-    sdDrawChart();
+    sdDrawAllCharts();
   });
   if (speedEl && speedLbl) {
     speedEl.addEventListener('input', () => { speedLbl.textContent = speedEl.value + '×'; });
   }
   sdUpdateRunButtons();
-  sdDrawChart();
+  sdDrawAllCharts();
   window.addEventListener('resize', resizeSdCanvas);
 })();
 
