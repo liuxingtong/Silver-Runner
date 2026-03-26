@@ -157,7 +157,7 @@ canvas#cv-labels{position:fixed;top:0;left:0;width:100%;z-index:55;pointer-event
 <div id="sd-dock" aria-label="系统动力学仿真双窗">
   <div class="sd-dock-hd">
     <span class="sd-dock-title">SD · 双情景</span>
-    <span class="sd-dock-note">与悬停方程一致的欧拉积分；外生弱多频节律；<strong style="color:var(--text)">启动</strong>后两窗同步推进。</span>
+    <span class="sd-dock-note">与悬停方程一致的欧拉积分；外生弱多频节律；<strong style="color:var(--text)">启动</strong>后两窗同步推进。上图 <strong style="color:var(--text)">N02·N09</strong> 两窗纵轴对齐便于对比；下图认知/代际/数据为独立刻度。</span>
     <div class="sd-dock-ctrl">
       <button type="button" class="sd-btn" id="sd-run">启动</button>
       <button type="button" class="sd-btn on" id="sd-pause">暂停</button>
@@ -210,8 +210,8 @@ canvas#cv-labels{position:fixed;top:0;left:0;width:100%;z-index:55;pointer-event
 // ══════════════════════════════════════════
 const nodes = {
   // ── 内生 (endo) ──
-  N02:  {label:'N02',name:'老年人聚集强度',     desc:'pop_65plus 归一化 · 多回路枢纽',eq:'N02_eq = k·N01·N03 + k·N05 + k·N09\ndN02 = 0.15·(eq−N02) − k·N02²',type:'endo',sub:'A',loops:'R1,R5,B2'},
-  N09:  {label:'N09',name:'街道舒适度',          desc:'0.4×GVI + 0.3×Shade + 0.3×Ped_Friendly',eq:'N09_eq = base + k·N07 − k·N02 − k·N_YP − 0.1·N10\ndN09 = 0.20·(eq−N09)',type:'endo',sub:'A',loops:'R3,B2'},
+  N02:  {label:'N02',name:'老年人聚集强度',     desc:'pop_65plus 归一化 · 多回路枢纽',eq:'N02_eq = k·N01·N03 + k·N05 + k·N09 + k·N18·N20\ndN02 = 0.15·(eq−N02) − k·N02²',type:'endo',sub:'A',loops:'R1,R5,B2'},
+  N09:  {label:'N09',name:'街道舒适度',          desc:'0.4×GVI + 0.3×Shade + 0.3×Ped_Friendly',eq:'N09_eq = base + k·N07 − k·N02 − k·N_YP − 0.1·N10 + k·N20\ndN09 = 0.20·(eq−N09)',type:'endo',sub:'A',loops:'R3,B2,R5'},
   N10:  {label:'N10',name:'车流量代理',          desc:'edge_traffic_pressure · R_bad 核心',eq:'N10_eq = (N10b + k·N_YP)·(1−γ·N18)\ndN10 = 0.30·(eq−N10)',type:'endo',sub:'A',loops:'R_bad'},
   N15:  {label:'N15',name:'认知储备激活潜力',    desc:'ART_Score · R4 强化回路驱动',eq:'dN15 = k14·N14 − k17·N17_eff·N15\n     + β·N_IG − k15_decay·N15',type:'endo',sub:'B',loops:'R4,B3'},
   N16:  {label:'N16',name:'主动探索意愿',        desc:'N15 驱动，受 N_GC 抑制(B6)',eq:'dN16 = k·N15 − k·N_GC − k·N16',type:'endo',sub:'B',loops:'R4,B6'},
@@ -273,6 +273,8 @@ const edges = [
   // R5 人机共生
   {f:'N02',t:'N19',p:'+',loop:'R5',fn:'k19·N02·N18'},
   {f:'N19',t:'N20',p:'+',loop:'R5',fn:'k20·N19'},
+  {f:'N20',t:'N09',p:'+',loop:'R5',fn:'k20_comfort·N20'},
+  {f:'N20',t:'N02',p:'+',loop:'R5',fn:'k20_gather·N18·N20'},
 ];
 
 // ══════════════════════════════════════════
@@ -780,6 +782,9 @@ const SD = {
   k16_N15: 0.26, k16_GC: 0.2, k16_decay: 0.14,
   k19_in: 0.42, k19_mix: 0.3, k19_decay: 0.11,
   k20_in: 0.22, k20_decay: 0.13,
+  /** N20→空间：闭环「数据—优化—设施/导引」对舒适与可达的正向反馈（原模型 N20 无出边，干预叙事弱） */
+  k20_comfort: 0.14,
+  k20_gather: 0.12,
 };
 let sdTime = 0;
 let sdRunning = false;
@@ -831,9 +836,9 @@ function sdIntegrateStep(y, N18, dt, e){
   const N17_eff = e.N17b * (1 - SD.delta * N18) + 0.15 * y.N10;
   const N10_eq = (SD.N10b + SD.k10_NYP * e.N_YP) * (1 - SD.gamma * N18);
   const dN10 = 0.3 * (N10_eq - y.N10);
-  const N09_eq = SD.base09 + SD.k09_N07 * e.N07 - SD.k09_N02 * y.N02 - SD.k09_NYP * e.N_YP - 0.1 * y.N10;
+  const N09_eq = SD.base09 + SD.k09_N07 * e.N07 - SD.k09_N02 * y.N02 - SD.k09_NYP * e.N_YP - 0.1 * y.N10 + SD.k20_comfort * y.N20;
   const dN09 = 0.2 * (N09_eq - y.N09);
-  const N02_eq = SD.k02_social * e.N01 * e.N03 + SD.k02_access * e.N05 + SD.k02_comfort * y.N09;
+  const N02_eq = SD.k02_social * e.N01 * e.N03 + SD.k02_access * e.N05 + SD.k02_comfort * y.N09 + SD.k20_gather * N18 * y.N20;
   const dN02 = 0.15 * (N02_eq - y.N02) - SD.k02_sat * y.N02 * y.N02;
   const igT = e.N_YP * (1 + SD.alpha * N18);
   const dN_IG = SD.tau * (igT - y.N_IG);
@@ -918,7 +923,25 @@ function resizeSdCanvas(){
   sdDrawAllCharts();
 }
 
-function sdDrawChart(ctx, hist, n18Val){
+/** 两窗共用的 N02·N09 纵轴范围，避免「有干预」窗因 N_IG/N15 量级更大而把粉/青线压扁造成误读 */
+function sdGlobalMainRange(){
+  const keys = ['N02', 'N09'];
+  let vmin = Infinity, vmax = -Infinity;
+  for (const hist of [sdHist0, sdHist1]) {
+    for (const k of keys) {
+      for (const v of hist[k]) {
+        vmin = Math.min(vmin, v);
+        vmax = Math.max(vmax, v);
+      }
+    }
+  }
+  if (!Number.isFinite(vmin)) return null;
+  const span = vmax - vmin;
+  const edge = span > 1e-6 ? span * 0.06 : 0.03;
+  return { vmin: vmin - edge, vmax: vmax + edge };
+}
+
+function sdDrawChart(ctx, hist, n18Val, mainRangeShared){
   if (!ctx) return;
   const can = ctx.canvas;
   const w = can._sdLogicalW || 200;
@@ -926,9 +949,11 @@ function sdDrawChart(ctx, hist, n18Val){
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.fillRect(0, 0, w, h);
-  const series = [
+  const seriesMain = [
     { key: 'N02', col: '#e91e8c' },
     { key: 'N09', col: '#00e5ff' },
+  ];
+  const seriesSub = [
     { key: 'N15', col: '#39ff85' },
     { key: 'N_IG', col: '#ffb300' },
     { key: 'N19', col: 'rgba(220,216,228,0.92)' },
@@ -942,40 +967,99 @@ function sdDrawChart(ctx, hist, n18Val){
     ctx.fillText('启动后显示轨迹', w / 2, h / 2);
     return;
   }
-  let vmin = Infinity, vmax = -Infinity;
-  for (const s of series) {
-    for (const v of hist[s.key]) {
-      vmin = Math.min(vmin, v);
-      vmax = Math.max(vmax, v);
+  const pad = 5;
+  const topPad = 9;
+  const bandGap = 5;
+  const labelH = 7;
+  const ghMain = Math.max(22, (h - pad - topPad - bandGap - labelH) * 0.52);
+  const ghSub = Math.max(18, h - pad - topPad - bandGap - labelH - ghMain);
+  const y0Main = topPad + labelH;
+  const y0Sub = y0Main + ghMain + bandGap;
+  const gw = w - pad * 2;
+
+  let mmin = Infinity, mmax = -Infinity;
+  if (mainRangeShared) {
+    mmin = mainRangeShared.vmin;
+    mmax = mainRangeShared.vmax;
+  } else {
+    for (const s of seriesMain) {
+      for (const v of hist[s.key]) {
+        mmin = Math.min(mmin, v);
+        mmax = Math.max(mmax, v);
+      }
+    }
+    if (mmax - mmin < 1e-6) { mmin -= 0.04; mmax += 0.04; }
+    else {
+      const e = (mmax - mmin) * 0.06;
+      mmin -= e; mmax += e;
     }
   }
-  if (vmax - vmin < 1e-6) { vmin -= 0.05; vmax += 0.05; }
-  const pad = 5;
-  const topPad = 10;
-  const gw = w - pad * 2, gh = h - pad - topPad;
-  const mapY = (v) => pad + gh - ((v - vmin) / (vmax - vmin)) * gh;
+  const mapYMain = (v) => y0Main + ghMain - ((v - mmin) / (mmax - mmin || 1)) * ghMain;
+
+  let smin = Infinity, smax = -Infinity;
+  for (const s of seriesSub) {
+    for (const v of hist[s.key]) {
+      smin = Math.min(smin, v);
+      smax = Math.max(smax, v);
+    }
+  }
+  if (smax - smin < 1e-6) { smin -= 0.05; smax += 0.05; }
+  else {
+    const e = (smax - smin) * 0.05;
+    smin -= e; smax += e;
+  }
+  const mapYSub = (v) => y0Sub + ghSub - ((v - smin) / (smax - smin || 1)) * ghSub;
   const mapX = (i) => pad + (i / (n - 1)) * gw;
-  ctx.strokeStyle = 'rgba(233,30,140,0.12)';
+
+  ctx.font = '500 6px JetBrains Mono, "Noto Sans SC", sans-serif';
+  ctx.fillStyle = 'rgba(122,116,136,0.75)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('N02·N09（两窗同刻度）', pad, topPad);
+  ctx.fillText('N15·N_IG·N19', pad, y0Sub - labelH + 1);
+
+  ctx.strokeStyle = 'rgba(233,30,140,0.1)';
   ctx.lineWidth = 1;
-  for (let g = 0; g <= 4; g++) {
-    const yy = pad + (g / 4) * gh;
+  for (let g = 0; g <= 3; g++) {
+    const yy = y0Main + (g / 3) * ghMain;
     ctx.beginPath();
     ctx.moveTo(pad, yy);
     ctx.lineTo(pad + gw, yy);
     ctx.stroke();
   }
-  for (const s of series) {
+  for (let g = 0; g <= 3; g++) {
+    const yy = y0Sub + (g / 3) * ghSub;
+    ctx.beginPath();
+    ctx.moveTo(pad, yy);
+    ctx.lineTo(pad + gw, yy);
+    ctx.stroke();
+  }
+
+  for (const s of seriesMain) {
     const arr = hist[s.key];
     ctx.beginPath();
     ctx.strokeStyle = s.col;
-    ctx.lineWidth = 1.25;
+    ctx.lineWidth = 1.35;
     for (let i = 0; i < n; i++) {
-      const x = mapX(i), yv = mapY(arr[i]);
+      const x = mapX(i), yv = mapYMain(arr[i]);
       if (i === 0) ctx.moveTo(x, yv);
       else ctx.lineTo(x, yv);
     }
     ctx.stroke();
   }
+  for (const s of seriesSub) {
+    const arr = hist[s.key];
+    ctx.beginPath();
+    ctx.strokeStyle = s.col;
+    ctx.lineWidth = 1.15;
+    for (let i = 0; i < n; i++) {
+      const x = mapX(i), yv = mapYSub(arr[i]);
+      if (i === 0) ctx.moveTo(x, yv);
+      else ctx.lineTo(x, yv);
+    }
+    ctx.stroke();
+  }
+
   ctx.font = '500 7px JetBrains Mono, monospace';
   ctx.textBaseline = 'top';
   ctx.textAlign = 'right';
@@ -984,8 +1068,9 @@ function sdDrawChart(ctx, hist, n18Val){
 }
 
 function sdDrawAllCharts(){
-  if (sdCtxA) sdDrawChart(sdCtxA, sdHist0, 0);
-  if (sdCtxB) sdDrawChart(sdCtxB, sdHist1, 0.6);
+  const mainR = sdGlobalMainRange();
+  if (sdCtxA) sdDrawChart(sdCtxA, sdHist0, 0, mainR);
+  if (sdCtxB) sdDrawChart(sdCtxB, sdHist1, 0.6, mainR);
 }
 
 function sdUpdateRunButtons(){
