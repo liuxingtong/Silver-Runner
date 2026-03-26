@@ -2065,101 +2065,196 @@ function rebuildSelectionFromSaved(s) {
   return sel;
 }
 
+function resetMapDraftGeometry() {
+  cancelAxisDrawing();
+  cancelSelectionDrawing();
+  selections.forEach((sel) => {
+    removeSelectionMapCard(sel);
+    if (sel.layer) map.removeLayer(sel.layer);
+  });
+  selections = [];
+  axes.forEach((a) => {
+    if (a.layer) {
+      map.removeLayer(a.layer);
+      a.layer = null;
+    }
+    if (a.markersLayer) {
+      map.removeLayer(a.markersLayer);
+      a.markersLayer = null;
+    }
+    a.points = [];
+  });
+  subAxes.forEach((a) => {
+    if (a.layer) map.removeLayer(a.layer);
+    if (a.markersLayer) map.removeLayer(a.markersLayer);
+  });
+  subAxes = [];
+  subAxisCounter = 0;
+  selectionIdCounter = 0;
+  activeSelectionId = null;
+  drawingAxis = null;
+}
+
+function buildMapDraftPayload() {
+  return {
+    version: 1,
+    axes: axes.map((a) => ({ id: a.id, points: a.points.map((p) => [p[0], p[1]]) })),
+    subAxes: subAxes.map((a) => ({
+      id: a.id,
+      label: a.label,
+      points: a.points.map((p) => [p[0], p[1]])
+    })),
+    subAxisCounter,
+    selections: selections.map((s) => ({
+      id: s.id,
+      name: s.name,
+      kind: s.kind === 'potential' ? 'potential' : 'resource',
+      points: s.points.map((p) => [p[0], p[1]]),
+      mapCardCollapsed: !!s.mapCardCollapsed,
+      blurb: s.blurb != null ? String(s.blurb) : ''
+    })),
+    selectionIdCounter,
+    activeSelectionId
+  };
+}
+
+function applyDraftPayload(data) {
+  if (!data || data.version !== 1) return;
+
+  resetMapDraftGeometry();
+
+  if (Array.isArray(data.axes)) {
+    data.axes.forEach((snap) => {
+      const ax = axes.find((a) => a.id === snap.id);
+      if (!ax || !snap.points) return;
+      ax.points = snap.points.map((p) => [p[0], p[1]]);
+    });
+  }
+
+  if (Array.isArray(data.subAxes)) {
+    let maxSubNum = 0;
+    data.subAxes.forEach((snap) => {
+      const m = /^S(\d+)$/.exec(snap.id || '');
+      if (m) maxSubNum = Math.max(maxSubNum, +m[1]);
+      const axis = {
+        id: snap.id,
+        label: snap.label || snap.id,
+        type: 'sub',
+        points: (snap.points || []).map((p) => [p[0], p[1]]),
+        layer: null,
+        markersLayer: null
+      };
+      subAxes.push(axis);
+    });
+    subAxisCounter = Math.max(data.subAxisCounter || 0, maxSubNum);
+  }
+
+  let maxSelNum = 0;
+  if (Array.isArray(data.selections)) {
+    data.selections.forEach((snap) => {
+      if (!snap.points || snap.points.length < 3) return;
+      const m = /^S(\d+)$/.exec(snap.id || '');
+      if (m) maxSelNum = Math.max(maxSelNum, +m[1]);
+      const sel = rebuildSelectionFromSaved({
+        id: snap.id,
+        name: snap.name || snap.id,
+        kind: snap.kind,
+        points: snap.points.map((p) => [p[0], p[1]]),
+        mapCardCollapsed: snap.mapCardCollapsed,
+        blurb: snap.blurb
+      });
+      selections.push(sel);
+    });
+    selectionIdCounter = Math.max(data.selectionIdCounter || 0, maxSelNum);
+    recomputeSelectionDisplayNames();
+  } else {
+    selectionIdCounter = data.selectionIdCounter || selectionIdCounter;
+  }
+
+  activeSelectionId = data.activeSelectionId || null;
+  if (activeSelectionId && !selections.some((s) => s.id === activeSelectionId)) {
+    activeSelectionId = null;
+  }
+  refreshAllSelectionMapCards();
+}
+
 function persistMapDrafts() {
   try {
-    const payload = {
-      version: 1,
-      axes: axes.map((a) => ({ id: a.id, points: a.points.map((p) => [p[0], p[1]]) })),
-      subAxes: subAxes.map((a) => ({
-        id: a.id,
-        label: a.label,
-        points: a.points.map((p) => [p[0], p[1]])
-      })),
-      subAxisCounter,
-      selections: selections.map((s) => ({
-        id: s.id,
-        name: s.name,
-        kind: s.kind === 'potential' ? 'potential' : 'resource',
-        points: s.points.map((p) => [p[0], p[1]]),
-        mapCardCollapsed: !!s.mapCardCollapsed,
-        blurb: s.blurb != null ? String(s.blurb) : ''
-      })),
-      selectionIdCounter,
-      activeSelectionId
-    };
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(buildMapDraftPayload()));
   } catch (e) {
     console.warn('本地保存失败（可能超出浏览器存储配额）', e);
   }
 }
 
+/** @returns {boolean} 是否已从 localStorage 恢复 */
 function restoreMapDrafts() {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) return false;
     const data = JSON.parse(raw);
-    if (!data || data.version !== 1) return;
-
-    if (Array.isArray(data.axes)) {
-      data.axes.forEach((snap) => {
-        const ax = axes.find((a) => a.id === snap.id);
-        if (!ax || !snap.points) return;
-        ax.points = snap.points.map((p) => [p[0], p[1]]);
-        if (ax.points.length >= 2) applyAxisGeometryToMap(ax);
-      });
-    }
-
-    if (Array.isArray(data.subAxes)) {
-      subAxes = [];
-      let maxSubNum = 0;
-      data.subAxes.forEach((snap) => {
-        const m = /^S(\d+)$/.exec(snap.id || '');
-        if (m) maxSubNum = Math.max(maxSubNum, +m[1]);
-        const axis = {
-          id: snap.id,
-          label: snap.label || snap.id,
-          type: 'sub',
-          points: (snap.points || []).map((p) => [p[0], p[1]]),
-          layer: null,
-          markersLayer: null
-        };
-        if (axis.points.length >= 2) applyAxisGeometryToMap(axis);
-        subAxes.push(axis);
-      });
-      subAxisCounter = Math.max(data.subAxisCounter || 0, maxSubNum);
-    }
-
-    let maxSelNum = 0;
-    if (Array.isArray(data.selections)) {
-      selections = [];
-      data.selections.forEach((snap) => {
-        if (!snap.points || snap.points.length < 3) return;
-        const m = /^S(\d+)$/.exec(snap.id || '');
-        if (m) maxSelNum = Math.max(maxSelNum, +m[1]);
-        const sel = rebuildSelectionFromSaved({
-          id: snap.id,
-          name: snap.name || snap.id,
-          kind: snap.kind,
-          points: snap.points.map((p) => [p[0], p[1]]),
-          mapCardCollapsed: snap.mapCardCollapsed,
-          blurb: snap.blurb
-        });
-        selections.push(sel);
-      });
-      selectionIdCounter = Math.max(data.selectionIdCounter || 0, maxSelNum);
-      recomputeSelectionDisplayNames();
-    } else {
-      selectionIdCounter = data.selectionIdCounter || selectionIdCounter;
-    }
-
-    activeSelectionId = data.activeSelectionId || null;
-    if (activeSelectionId && !selections.some((s) => s.id === activeSelectionId)) {
-      activeSelectionId = null;
-    }
-    refreshAllSelectionMapCards();
+    if (!data || data.version !== 1) return false;
+    applyDraftPayload(data);
+    return true;
   } catch (e) {
     console.warn('本地草稿恢复失败', e);
+    return false;
   }
+}
+
+async function tryLoadPublishedDraftFromRepo() {
+  try {
+    const r = await fetch(STATIC_DRAFT_URL, { cache: 'no-store' });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (!data || data.version !== 1) return;
+    applyDraftPayload(data);
+    persistMapDrafts();
+    renderAxisList();
+    console.info('[选址草稿] 已从', STATIC_DRAFT_URL, '加载并写入本地缓存');
+  } catch (e) {
+    console.warn('[选址草稿] 未加载仓库默认文件（可忽略：尚未提交该 JSON）', e);
+  }
+}
+
+function exportSiteSelectionDraft() {
+  const payload = buildMapDraftPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = 'site-selection-draft.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function onSiteSelectionDraftFile(ev) {
+  const input = ev.target;
+  const f = input.files && input.files[0];
+  input.value = '';
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(String(reader.result || ''));
+      if (!data || data.version !== 1) throw new Error('需要 version 为 1 的选址草稿 JSON');
+      applyDraftPayload(data);
+      persistMapDrafts();
+      renderAxisList();
+      axes.forEach((a) => {
+        if (a.points && a.points.length >= 2) applyAxisGeometryToMap(a);
+      });
+      subAxes.forEach((a) => {
+        if (a.points && a.points.length >= 2) applyAxisGeometryToMap(a);
+      });
+      loadStaticDataLayers().then(() => {
+        setMode(currentMode);
+        void refetchLanduseIfSelectionsExceedCachedBbox();
+      });
+    } catch (err) {
+      alert('导入失败：' + (err && err.message ? err.message : String(err)));
+    }
+  };
+  reader.readAsText(f, 'UTF-8');
 }
 
 function addSubAxis() {
@@ -3475,10 +3570,13 @@ async function loadStaticDataLayers() {
   persistMapDrafts();
 }
 
-restoreMapDrafts();
+document.getElementById('draftFileInput').addEventListener('change', onSiteSelectionDraftFile);
+
+const hadLocalDraft = restoreMapDrafts();
 renderAxisList();
 loadDefaultStudyBoundary()
-  .then(() => {
+  .then(async () => {
+    if (!hadLocalDraft) await tryLoadPublishedDraftFromRepo();
     axes.forEach((a) => {
       if (a.points && a.points.length >= 2) applyAxisGeometryToMap(a);
     });
