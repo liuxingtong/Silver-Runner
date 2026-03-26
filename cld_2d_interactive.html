@@ -136,12 +136,12 @@ canvas#cv-labels{position:fixed;inset:0;width:100%;height:100%;z-index:55;pointe
   </div>
 </div>
 
-<!-- SD mini simulation (stock–flow sketch aligned with node eq. tooltips) -->
+<!-- SD simulation (stock–flow sketch aligned with node eq. tooltips) -->
 <div class="card" id="card-sd">
-  <div class="ch" onclick="tog(this)">SD 迷你仿真 <span class="tg">−</span></div>
+  <div class="ch" onclick="tog(this)">SD 仿真 <span class="tg">−</span></div>
   <div class="card-body">
     <p style="font-size:10px;color:var(--dim);line-height:1.5;margin-bottom:6px">
-      与节点悬停方程一致的<strong style="color:var(--text)">归一化存量</strong>欧拉积分；对比 N18=0 与干预下关键量的轨迹。
+      与节点悬停方程一致的<strong style="color:var(--text)">归一化存量</strong>欧拉积分；外生量叠加弱多频节律，轨迹持续波动而非单点收敛；可对比 N18=0 与干预。
     </p>
     <div class="sd-row">
       <span style="font-size:9px;color:var(--dim)">N18</span>
@@ -727,7 +727,7 @@ function tog(el){
 }
 
 // ══════════════════════════════════════════
-// SD 迷你仿真（与节点 N18 注释：α β γ δ 及各方程结构对齐的归一化存量）
+// SD 仿真（与节点 N18 注释：α β γ δ 及各方程结构对齐的归一化存量）
 // ══════════════════════════════════════════
 const SD = {
   alpha: 2.0, beta: 0.15, gamma: 0.6, delta: 0.5, tau: 0.48,
@@ -741,6 +741,7 @@ const SD = {
   k20_in: 0.22, k20_decay: 0.13,
 };
 let sdN18 = 0;
+let sdTime = 0;
 let sdRunning = false;
 let sdLogicalW = 260, sdLogicalH = 128;
 const sdCan = document.getElementById('sd-canvas');
@@ -757,8 +758,30 @@ function clip01(x, hi = 1.45){
   return Math.max(0, Math.min(hi, x));
 }
 
+/** 基线外生量 × 多频弱扰动，使均衡目标随时间漂移，曲线保持准周期波动（非渐近水平线） */
+function sdExoAtTime(t){
+  const b = SD.exo;
+  const w1 = 0.88, w2 = 1.62, w3 = 0.36;
+  const m07 = 1 + 0.1 * Math.sin(w1 * t) + 0.05 * Math.sin(w2 * t + 0.7);
+  const mYP = 1 + 0.09 * Math.sin(w2 * t + 1.1) + 0.06 * Math.sin(w3 * t);
+  const m14 = 1 + 0.11 * Math.sin(w3 * t + 2) + 0.05 * Math.cos(w1 * t * 1.28);
+  const mSoc = 1 + 0.065 * Math.sin(w1 * t * 1.15 + 0.5);
+  const clipE = (v) => Math.max(0.08, Math.min(0.92, v));
+  return {
+    N01: clipE(b.N01 * mSoc),
+    N03: clipE(b.N03 * mSoc),
+    N05: b.N05,
+    N07: clipE(b.N07 * m07),
+    N14: clipE(b.N14 * m14),
+    N17b: b.N17b,
+    N_YP: clipE(b.N_YP * mYP),
+    N_GC: b.N_GC,
+  };
+}
+
 function sdStep(dt){
-  const e = SD.exo;
+  sdTime += dt;
+  const e = sdExoAtTime(sdTime);
   const N18 = sdN18;
   const y = sdY;
   const N17_eff = e.N17b * (1 - SD.delta * N18) + 0.15 * y.N10;
@@ -914,6 +937,7 @@ function sdUpdateRunButtons(){
   if (pauseBtn) pauseBtn.addEventListener('click', () => { sdRunning = false; sdUpdateRunButtons(); });
   if (resetBtn) resetBtn.addEventListener('click', () => {
     sdRunning = false;
+    sdTime = 0;
     sdY = sdInitialState();
     sdClearHistory();
     sdUpdateRunButtons();
