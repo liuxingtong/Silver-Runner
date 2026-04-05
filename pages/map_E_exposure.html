@@ -3,22 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>S · 伤害维度 — 空间分布</title>
+<title>E · 暴露维度 — 空间分布</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="xujiahui-osm-boundary.js"></script>
+<script src="../lib/xujiahui-osm-boundary.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'DM Sans','Noto Sans SC',sans-serif; }
+
   #map { width: 100%; height: 100%; z-index: 1; }
   .leaflet-control-attribution { display: none !important; }
 
-  .legend, .stats-box { pointer-events: none; }
-  .layer-toggle { pointer-events: none; }
-  .layer-toggle .lt-btn { pointer-events: auto; }
+  .legend, .stats-box, .sub-panel { pointer-events: none; }
 
   .panel-header {
     position: fixed; top: 0; left: 0; right: 0;
@@ -47,7 +46,7 @@
     z-index: 1000;
     backdrop-filter: blur(12px);
     min-width: 0;
-    max-width: min(230px, 44vw);
+    max-width: min(220px, 42vw);
   }
   .legend .legend-title {
     font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
@@ -65,63 +64,46 @@
   }
   .legend .formula em { color: #DA4BA3; font-style: normal; font-weight: 600; }
 
-  .layer-toggle {
-    position: fixed; top: 40px; right: 8px;
-    background: rgba(14,14,14,0.92);
-    border: 1px solid rgba(218,75,163,0.15);
-    border-radius: 8px;
-    padding: 6px 8px 8px;
-    z-index: 1000;
-    backdrop-filter: blur(12px);
-    max-width: min(200px, 42vw);
-  }
-  .layer-toggle .lt-title {
-    font-size: 7px; letter-spacing: 1.5px; text-transform: uppercase;
-    color: rgba(255,255,255,0.3); margin-bottom: 6px;
-  }
-  .layer-toggle .lt-btn {
-    display: block; width: 100%;
-    padding: 5px 8px; margin-bottom: 4px;
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 5px;
-    background: transparent;
-    color: rgba(255,255,255,0.5);
-    font-family: inherit; font-size: 10px;
-    cursor: pointer; transition: all 0.2s;
-    text-align: left;
-  }
-  .layer-toggle .lt-btn:hover { border-color: rgba(218,75,163,0.4); color: #f0f0f0; }
-  .layer-toggle .lt-btn.active {
-    border-color: #DA4BA3; color: #DA4BA3;
-    background: rgba(218,75,163,0.08);
-  }
-  .layer-toggle .lt-btn .btn-sub {
-    font-size: 8px; color: rgba(255,255,255,0.3); display: block; margin-top: 1px;
-  }
-  .layer-toggle .lt-btn.active .btn-sub { color: rgba(218,75,163,0.5); }
-  .layer-toggle .lt-btn.lt-boundary:not(.active) { color: rgba(255,255,255,0.35); }
-
   .stats-box {
-    position: fixed; bottom: 8px; right: 8px;
+    position: fixed; top: 40px; right: 8px;
     background: rgba(14,14,14,0.92);
     border: 1px solid rgba(218,75,163,0.15);
     border-radius: 8px;
     padding: 6px 10px 8px;
     z-index: 1000;
     backdrop-filter: blur(12px);
-    min-width: 0;
+    max-width: min(200px, 38vw);
+  }
+  .stats-box .stat-row { margin-bottom: 4px; }
+  .stats-box .stat-row:last-child { margin-bottom: 0; }
+  .stats-box .stat-label {
+    font-size: 7px; letter-spacing: 1px; text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+  .stats-box .stat-val { font-size: 14px; font-weight: 700; color: #DA4BA3; line-height: 1.1; }
+  .stats-box .stat-unit { font-size: 11px; color: rgba(255,255,255,0.25); font-weight: 300; }
+
+  .sub-panel {
+    position: fixed; bottom: 8px; right: 8px;
+    background: rgba(14,14,14,0.92);
+    border: 1px solid rgba(218,75,163,0.15);
+    border-radius: 8px;
+    padding: 8px 10px 10px;
+    z-index: 1000;
+    backdrop-filter: blur(12px);
     max-width: min(200px, 40vw);
   }
-  .stats-box .sp-title {
+  .sub-panel .sp-title {
     font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase;
     color: rgba(218,75,163,0.6); margin-bottom: 6px;
   }
-  .stats-box .si {
-    display: flex; justify-content: space-between; gap: 8px;
+  .sub-panel .persona-item {
+    display: flex; align-items: center; gap: 5px;
     margin-bottom: 4px; font-size: 9px;
   }
-  .stats-box .si .si-label { color: rgba(255,255,255,0.5); }
-  .stats-box .si .si-val { color: #DA4BA3; font-weight: 600; }
+  .sub-panel .persona-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sub-panel .persona-name { color: rgba(255,255,255,0.7); flex: 1; }
+  .sub-panel .persona-val { color: #DA4BA3; font-weight: 600; font-size: 12px; }
 
   .edge-tooltip {
     background: rgba(14,14,14,0.95) !important;
@@ -150,6 +132,37 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
   }
 
+  .sub-panel .boundary-sep {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .sub-panel .boundary-toggle-btn {
+    pointer-events: auto;
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    padding: 5px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    font-family: inherit;
+    font-size: 9px;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.35;
+  }
+  .sub-panel .boundary-toggle-btn:hover {
+    border-color: rgba(218, 75, 163, 0.4);
+    color: #f0f0f0;
+  }
+  .sub-panel .boundary-toggle-btn.active {
+    border-color: #DA4BA3;
+    color: #DA4BA3;
+    background: rgba(218, 75, 163, 0.08);
+  }
+
   .csv-load-banner {
     display: none;
     position: fixed;
@@ -158,8 +171,8 @@
     max-width: 420px;
     z-index: 2000;
     padding: 20px 22px;
-    background: rgba(22, 14, 18, 0.96);
-    border: 1px solid rgba(218,75,163,0.45);
+    background: rgba(18, 12, 22, 0.96);
+    border: 1px solid rgba(218,75,163,0.4);
     border-radius: 12px;
     color: rgba(255,255,255,0.85);
     font-size: 13px;
@@ -195,40 +208,73 @@
 </div>
 
 <div class="panel-header">
-  <div class="tag">CSVI Dimension 02 · Spatial Distribution</div>
-  <h1><span>S</span> · 伤害维度 · 街段级空间分布</h1>
-  <div class="sub">数据：<code>cld_priority.csv</code> · 玫红圆点</div>
-</div>
-
-<div class="layer-toggle">
-  <div class="lt-title">显示图层 Layer</div>
-  <button class="lt-btn active" id="btn-env" onclick="switchLayer('env')">S_env · 环境伤害</button>
-  <button class="lt-btn" id="btn-contact" onclick="switchLayer('contact')">S_contact · 接触浪费</button>
-  <button class="lt-btn" id="btn-total" onclick="switchLayer('total')">S_total · 总伤害</button>
-  <button type="button" class="lt-btn active lt-boundary" id="btn-boundary" onclick="toggleBoundaryLayer()" style="margin-top:6px;margin-bottom:0;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:9px">大徐家汇边界 · OSM</button>
-</div>
-
-<div class="legend">
-  <div class="legend-title" id="legendTitle">csvi_S_env · 玫红圆点</div>
-  <canvas class="gradient-bar" id="gradBar" height="10"></canvas>
-  <div class="gradient-labels" id="gradLabels">
-    <span>低</span><span>中</span><span>高</span>
-  </div>
-  <div class="formula">
-    <em>S</em> = <em>S_env</em> + <em>S_contact</em><br>
-    圆点颜色 <em>#DA4BA3</em>，单点较透；<strong>重叠越密越实</strong>
-  </div>
+  <div class="tag">CSVI Dimension 01 · Spatial Distribution</div>
+  <h1><span>E</span> · 暴露维度 · 街段级空间分布</h1>
+  <div class="sub">Exposure — 数据：<code>cld_priority.csv</code> · 边中点玫红圆点</div>
 </div>
 
 <div class="stats-box">
-  <div class="sp-title">子指标 Sub-Indicators</div>
-  <div class="si"><span class="si-label">N17</span><span class="si-val" id="v-n17">—</span></div>
-  <div class="si"><span class="si-label">N14</span><span class="si-val" id="v-n14">—</span></div>
-  <div class="si"><span class="si-label">N_YP</span><span class="si-val" id="v-nyp">—</span></div>
+  <div class="stat-row">
+    <div class="stat-label">Mean csvi_E</div>
+    <div class="stat-val">—</div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-label">Std</div>
+    <div class="stat-val">—</div>
+  </div>
+  <div class="stat-row">
+    <div class="stat-label">Edges（去重后）</div>
+    <div class="stat-val">—</div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-title">csvi_E · 玫红圆点（深浅 = 值）</div>
+  <canvas class="gradient-bar" id="gradBar" height="10"></canvas>
+  <div class="gradient-labels">
+    <span>0.0</span><span>0.5</span><span>1.0</span>
+  </div>
+  <div class="formula">
+    颜色固定 <em>#DA4BA3</em>，单点较透；重叠处更实<br>
+    <span style="opacity:0.55;font-size:10px">圆点固定约 12m 半径，随地图缩放变化</span>
+  </div>
+</div>
+
+<div class="sub-panel">
+  <div class="sp-title">五类画像 Personas</div>
+  <div class="persona-item">
+    <div class="persona-dot" style="background:#DA4BA3"></div>
+    <span class="persona-name">w₁ 隔代照料者</span>
+    <span class="persona-val">N01+N_GC</span>
+  </div>
+  <div class="persona-item">
+    <div class="persona-dot" style="background:#DA4BA3"></div>
+    <span class="persona-name">w₂ 医疗重度使用者</span>
+    <span class="persona-val">N_MED</span>
+  </div>
+  <div class="persona-item">
+    <div class="persona-dot" style="background:#DA4BA3"></div>
+    <span class="persona-name">w₃ 晨练社群组织者</span>
+    <span class="persona-val">体育POI</span>
+  </div>
+  <div class="persona-item">
+    <div class="persona-dot" style="background:#DA4BA3"></div>
+    <span class="persona-name">w₄ 独居高龄老人</span>
+    <span class="persona-val">N02</span>
+  </div>
+  <div class="persona-item">
+    <div class="persona-dot" style="background:#DA4BA3"></div>
+    <span class="persona-name">w₅ 活跃新老年</span>
+    <span class="persona-val">pop₆₀₋₆₄</span>
+  </div>
+  <div class="boundary-sep">
+    <button type="button" class="boundary-toggle-btn active" id="btn-boundary-e" onclick="toggleBoundaryLayer()">大徐家汇边界 · OSM</button>
+  </div>
 </div>
 
 <script>
 const MAGENTA = '#DA4BA3';
+/** 米：屏幕上的圆大小会随缩放变化（Leaflet 默认行为） */
 const R_M = 12;
 const R_M_HOVER = 18;
 
@@ -242,11 +288,13 @@ const map = L.map('map', {
 const circleRenderer = L.canvas({ padding: 0.5 });
 const CIRCLE_SLICE_MS = 14;
 
+const edgeMarkers = [];
 const csvLoadBanner = document.getElementById('csv-load-banner');
 const csvFileInput = document.getElementById('csv-file-input');
 
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19, subdomains: 'abcd'
+  maxZoom: 19,
+  subdomains: 'abcd'
 }).addTo(map);
 
 L.control.zoom({ position: 'topright' }).addTo(map);
@@ -257,7 +305,7 @@ addXujiahuiBoundaryToGroup(boundaryLayerGroup);
 let boundaryVisible = true;
 function toggleBoundaryLayer() {
   boundaryVisible = !boundaryVisible;
-  const btn = document.getElementById('btn-boundary');
+  const btn = document.getElementById('btn-boundary-e');
   if (boundaryVisible) {
     map.addLayer(boundaryLayerGroup);
     if (btn) btn.classList.add('active');
@@ -288,6 +336,19 @@ function addCirclesTimeSliced(edges, drawOne, onComplete) {
   requestAnimationFrame(tick);
 }
 
+function drawLegendBar() {
+  const canvas = document.getElementById('gradBar');
+  const w = Math.max(80, canvas.parentElement.clientWidth - 40);
+  canvas.width = w;
+  const ctx = canvas.getContext('2d');
+  for (let x = 0; x < w; x++) {
+    const t = x / (w - 1 || 1);
+    ctx.fillStyle = `rgba(218,75,163,${0.11 + t * 0.43})`;
+    ctx.fillRect(x, 0, 1, 10);
+  }
+}
+drawLegendBar();
+
 function dedupeUndirectedEdges(rows) {
   const m = new Map();
   for (const r of rows) {
@@ -309,98 +370,35 @@ function stripBomKeys(d) {
   return o;
 }
 
-function parseRowS(d) {
+function parseRow(d) {
   d = stripBomKeys(d);
-  const sEnv = +d.csvi_S_env;
-  const sContact = +d.csvi_S_contact;
   return {
     u: d.u,
     v: d.v,
     lon: +d.lon,
     lat: +d.lat,
     length: +d.length,
-    s_env: sEnv,
-    s_contact: sContact,
-    s_total: sEnv + sContact,
-    N17: +d.N17,
-    N14: +d.N14,
-    N_YP: +d.N_YP
+    csvi_E: +d.csvi_E,
+    N01: +d.N01,
+    N02: +d.N02,
+    N_GC: +d.N_GC,
+    N_MED: +d.N_MED
   };
 }
 
-let maxEnv = 0.3;
-let maxContact = 0.7;
-let maxTotal = 0.8;
-const polylines = [];
-let currentLayer = 'env';
-
-function normS(edge) {
-  let v;
-  switch (currentLayer) {
-    case 'env': v = edge.s_env / (maxEnv || 0.01); break;
-    case 'contact': v = edge.s_contact / (maxContact || 0.01); break;
-    default: v = edge.s_total / (maxTotal || 0.01); break;
-  }
-  return Math.max(0, Math.min(1, v));
-}
-
-function sMarkerStyle(edge) {
-  const t = normS(edge);
-  const op = 0.1 + t * 0.44;
+function styleFromE(ev) {
+  const t = Math.max(0, Math.min(1, Number.isFinite(ev) ? ev : 0));
+  const op = 0.11 + t * 0.43;
   return {
     radius: R_M,
+    stroke: true,
     color: MAGENTA,
-    fillColor: MAGENTA,
     weight: 0.45,
     opacity: op,
+    fillColor: MAGENTA,
     fillOpacity: Math.min(0.95, op * 1.02),
     renderer: circleRenderer
   };
-}
-
-function drawGradient(maxVal, labelFn) {
-  const canvas = document.getElementById('gradBar');
-  const w = Math.max(80, canvas.parentElement.clientWidth - 40);
-  canvas.width = w;
-  const ctx = canvas.getContext('2d');
-  for (let x = 0; x < w; x++) {
-    const t = x / (w - 1 || 1);
-    ctx.fillStyle = `rgba(218,75,163,${0.1 + t * 0.44})`;
-    ctx.fillRect(x, 0, 1, 10);
-  }
-  const el = document.getElementById('gradLabels');
-  if (labelFn) el.innerHTML = labelFn(maxVal);
-}
-
-function switchLayer(layer) {
-  currentLayer = layer;
-  document.querySelectorAll('.lt-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(`btn-${layer}`).classList.add('active');
-
-  const titleEl = document.getElementById('legendTitle');
-
-  polylines.forEach(({ pl, edge }) => {
-    pl.setStyle(sMarkerStyle(edge));
-    pl.off('mouseout').on('mouseout', function () {
-      this.closeTooltip();
-      this.setStyle(sMarkerStyle(edge));
-    });
-  });
-
-  switch (layer) {
-    case 'env':
-      titleEl.textContent = 'csvi_S_env · 玫红圆点';
-      drawGradient(maxEnv, mv => `<span>0</span><span>${(mv / 2).toFixed(2)}</span><span>${mv.toFixed(2)}</span>`);
-      break;
-    case 'contact':
-      titleEl.textContent = 'csvi_S_contact · 玫红圆点';
-      drawGradient(maxContact, mv => `<span>0</span><span>${(mv / 2).toFixed(2)}</span><span>${mv.toFixed(2)}</span>`);
-      break;
-    case 'total':
-      titleEl.textContent = 'csvi_S_total · 玫红圆点';
-      drawGradient(maxTotal, mv => `<span>0</span><span>${(mv / 2).toFixed(2)}</span><span>${mv.toFixed(2)}</span>`);
-      break;
-  }
 }
 
 function renderMapFromRaw(raw) {
@@ -410,65 +408,61 @@ function renderMapFromRaw(raw) {
   }
   const edges = dedupeUndirectedEdges(raw);
   const ll = edges.map(e => [+e.lat, +e.lon]);
-  if (ll.length === 0 || !ll.every(c => Number.isFinite(c[0]) && Number.isFinite(c[1]))) {
+  const ok = ll.length > 0 && ll.every(c => Number.isFinite(c[0]) && Number.isFinite(c[1]));
+  if (!ok) {
     csvLoadBanner.style.display = 'block';
     return;
   }
 
-  polylines.forEach(({ pl }) => map.removeLayer(pl));
-  polylines.length = 0;
+  edgeMarkers.forEach(mk => map.removeLayer(mk));
+  edgeMarkers.length = 0;
   csvLoadBanner.style.display = 'none';
 
   const bounds = L.latLngBounds(ll);
   if (bounds.isValid()) map.fitBounds(bounds.pad(0.02));
 
-  maxEnv = d3.max(edges, d => d.s_env) || 0.01;
-  maxContact = d3.max(edges, d => d.s_contact) || 0.01;
-  maxTotal = d3.max(edges, d => d.s_total) || 0.01;
-
-  document.getElementById('v-n17').textContent = d3.mean(edges, d => d.N17).toFixed(3);
-  document.getElementById('v-n14').textContent = d3.mean(edges, d => d.N14).toFixed(3);
-  document.getElementById('v-nyp').textContent = d3.mean(edges, d => d.N_YP).toFixed(3);
-
-  currentLayer = 'env';
+  const eMean = d3.mean(edges, d => d.csvi_E);
+  const eStd = d3.deviation(edges, d => d.csvi_E);
+  document.querySelector('.stats-box .stat-val').textContent = (eMean != null && !Number.isNaN(eMean) ? eMean : 0).toFixed(3);
+  document.querySelectorAll('.stats-box .stat-val')[1].textContent = (eStd != null && !Number.isNaN(eStd) ? eStd : 0).toFixed(3);
+  document.querySelectorAll('.stats-box .stat-val')[2].textContent = String(edges.length);
 
   addCirclesTimeSliced(edges, edge => {
-    const pl = L.circle([edge.lat, edge.lon], sMarkerStyle(edge)).addTo(map);
+    const ev = Number.isFinite(edge.csvi_E) ? edge.csvi_E : 0;
+    const dot = L.circle([edge.lat, edge.lon], styleFromE(ev)).addTo(map);
+    edgeMarkers.push(dot);
 
-    pl.bindTooltip(`
-    <div class="tt-head">S_env=${edge.s_env.toFixed(4)} | S_contact=${edge.s_contact.toFixed(4)}</div>
-    <div class="tt-r"><span>S_total</span><b>${edge.s_total.toFixed(4)}</b></div>
-    <div class="tt-r"><span>N17</span><b>${edge.N17.toFixed(3)}</b></div>
-    <div class="tt-r"><span>N14</span><b>${edge.N14.toFixed(3)}</b></div>
-    <div class="tt-r"><span>N_YP</span><b>${edge.N_YP.toFixed(3)}</b></div>
+    dot.bindTooltip(`
+    <div class="tt-head">csvi_E = ${ev.toFixed(4)} <span style="opacity:0.6">· 边中点</span></div>
+    <div class="tt-r"><span>N01</span><b>${Math.max(0, edge.N01).toFixed(3)}</b></div>
+    <div class="tt-r"><span>N02</span><b>${Math.max(0, edge.N02).toFixed(3)}</b></div>
+    <div class="tt-r"><span>N_GC</span><b>${Math.max(0, edge.N_GC).toFixed(3)}</b></div>
+    <div class="tt-r"><span>N_MED</span><b>${Math.max(0, edge.N_MED).toFixed(3)}</b></div>
+    <div class="tt-r"><span>长度</span><b>${Math.max(1, edge.length).toFixed(0)}m</b></div>
   `, { className: 'edge-tooltip', sticky: false, direction: 'top', offset: [0, -10] });
 
-    pl.on('mouseover', function () {
+    dot.on('mouseover', function () {
       this.setStyle({
+        ...styleFromE(ev),
         radius: R_M_HOVER,
         weight: 0.75,
-        color: MAGENTA,
-        fillColor: MAGENTA,
         opacity: 1,
-        fillOpacity: 0.92,
-        renderer: circleRenderer
+        fillOpacity: 0.92
       });
       this.bringToFront();
     });
-    pl.on('mouseout', function () {
+    dot.on('mouseout', function () {
       this.closeTooltip();
-      this.setStyle(sMarkerStyle(edge));
+      this.setStyle(styleFromE(ev));
     });
-
-    polylines.push({ pl, edge });
-  }, () => switchLayer('env'));
+  }, () => {});
 }
 
 function loadCsvText(text) {
   const t = (text || '').replace(/^\uFEFF/, '');
   let raw;
   try {
-    raw = d3.csvParse(t, parseRowS);
+    raw = d3.csvParse(t, parseRow);
   } catch (err) {
     console.error(err);
     csvLoadBanner.style.display = 'block';
@@ -477,7 +471,7 @@ function loadCsvText(text) {
   renderMapFromRaw(raw);
 }
 
-const csvUrl = new URL('cld_priority.csv', window.location.href).href;
+const csvUrl = new URL('../data/cld/cld_priority.csv', window.location.href).href;
 fetch(csvUrl, { cache: 'no-store' })
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(loadCsvText)

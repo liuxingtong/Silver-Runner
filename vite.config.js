@@ -6,13 +6,13 @@ export default defineConfig({
   plugins: [react()],
   base: "./",
   server: {
-    open: "/stay_willingness_matrix.html",
+    open: "/src/matrix/stay_willingness_matrix.html",
   },
   build: {
     outDir: "dist",
     emptyOutDir: true,
     rollupOptions: {
-      input: resolve(__dirname, "stay_willingness_matrix.html"),
+      input: resolve(__dirname, "src/matrix/stay_willingness_matrix.html"),
     },
   },
 });

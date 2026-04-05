@@ -32,14 +32,14 @@
 <body>
 <div class="panel">
   <h1>大徐家汇四街道并集</h1>
-  <div>数据源：<code>data/daxujiahui-four-streets-union.geojson</code></div>
+  <div>数据源（相对本页）：<code>../data/daxujiahui-four-streets-union.geojson</code></div>
   <div>底图：OpenStreetMap 标准瓦片（保留右下角署名）</div>
   <div class="err" id="err"></div>
 </div>
 <div id="map"></div>
 <script>
 (function () {
-  const GEOJSON_URL = 'data/daxujiahui-four-streets-union.geojson';
+  const GEOJSON_URL = '../data/daxujiahui-four-streets-union.geojson';
 
   const map = L.map('map', {
     center: [31.20, 121.44],

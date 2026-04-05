@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="ac-dom-aggregate.js"></script>
-<script src="xujiahui-osm-boundary.js"></script>
+<script src="../lib/ac-dom-aggregate.js"></script>
+<script src="../lib/xujiahui-osm-boundary.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
@@ -469,7 +469,7 @@ function addEmpiricalPercentileRanks(edges) {
 }
 
 // ============================================================
-//  DATA: 优先加载同目录 cld_priority.csv（需通过本地 HTTP 打开页面）
+//  DATA: 优先加载 ../data/cld/cld_priority.csv（需通过本地 HTTP 打开页面）
 // ============================================================
 function gaussRand(mean, std) {
   let u=0,v=0;
@@ -478,7 +478,7 @@ function gaussRand(mean, std) {
   return mean + std * Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
 }
 
-const CSV_FILENAME = 'cld_priority.csv';
+const CSV_FILENAME = '../data/cld/cld_priority.csv';
 
 /** 表中 lon/lat 为边段中点；用 Gauss–Seidel 近似恢复端点坐标以绘制线段 */
 function estimateNodePositions(rawEdges) {

@@ -1,58 +1,67 @@
 # 项目目录说明（cards）
 
-静态叙事页、Leaflet 地图与少量 Node 脚本共用本仓库。以下路径以仓库根目录为准。
+静态叙事页、Leaflet 地图与 Node 脚本共用本仓库。以下路径以仓库根目录为准。页面需通过 **HTTP 根目录** 访问（如 `python -m http.server` 或 `npm run dev` 仅针对矩阵）。
 
 ## 顶层一览
 
 | 路径 | 用途 |
 |------|------|
-| **`1narrative-framework.html`** | 主叙事框架；内嵌 iframe 引用下方多数页面，**勿改这些 HTML 的文件名/相对路径**除非同步改 iframe。 |
+| **`index.html`** | 可选入口：跳转到 `pages/1narrative-framework.html`。 |
+| **`pages/`** | 主叙事框架、Leaflet 地图、模型与卡片等 **HTML 页面**（iframe 与相对路径均以此为锚）。 |
+| **`lib/`** | 多页共用的浏览器端逻辑脚本（边界、聚合、DBSCAN、廊道、场域圆等）。 |
+| **`src/matrix/`** | 停留意愿矩阵（Vite）：`stay_willingness_matrix.html`、`matrix_main.jsx`、`csvi_quadrant.jsx`。 |
+| **`data/cld/`** | CLD/CSVI 边表：`cld_priority.csv`（主表）及 `cld_priority_beifan.csv` 等备份；`npm run sync:cld` 将主表复制到 `public/cld_priority.csv` 供矩阵 `fetch`。 |
+| **`assets/images/`** | 叙事页插图等静态资源。 |
+| **`package.json`** / **`vite.config.js`** | 依赖与 Vite 构建（`dist/`）。 |
+
+## `pages/` 内主要 HTML
+
+| 文件 | 说明 |
+|------|------|
+| **`1narrative-framework.html`** | 主叙事框架；内嵌 iframe 引用同目录及 `../profiles/`、`../dist/` 等，**改 `data-src` 或文件名须同步**。 |
 | **`map_*.html`** | 单主题地图：`map_E_exposure.html`、`map_S_stressor.html`、`map_AC_buffer.html`、`map_intervention_nodes.html`。 |
-| **`xujiahui-site-selection.html`** | **场域系统选址主页面**；叙事 **S9** iframe 嵌入此文件；场域双圆 + 研究区边界 + 轴线/选址/数据层。 |
-| **`field_system_selection.html`** | 同套场域算法的独立地图页（绘玫红廊道）；非叙事默认入口。 |
+| **`xujiahui-site-selection.html`** | 场域系统选址主页面（叙事 S9 iframe）。 |
+| **`xujiahui-site-selection-osm-light.html`** | 浅色 OSM 栅格 + 浅色 UI；出图/截图（`?export`、`?zoom` 等）。 |
+| **`field_system_selection.html`** | 同算法独立页，绘玫红廊道折线。 |
 | **`cld_2d_interactive.html`** | CLD 二维交互。 |
-| **`csvi-model.html`**、`dual-line-framework.html`、`prototype-cards.html`、`xujiahui-pole-cards.html`、`node-type-cards-v3.html` | 模型与卡片页。 |
-| **`stay_willingness_matrix.html`** | 停留意愿矩阵入口（Vite 构建另有配置）。 |
-| **`xujiahui-osm-boundary.js`** | 研究区边界：仅大徐家汇四街道并集（`data/daxujiahui-four-streets-union.geojson`），样式同原徐汇玫红虚线；供各 `map_*.html` 共用。 |
-| **`ac-dom-aggregate.js`** | 四资源主导列（`AC_*_dom`）算术平均 → 聚合 AC_phys；资源类型 argmax；供 `map_intervention_nodes.html`、`map_AC_buffer.html` 引用（`csvi_quadrant.jsx` 内联同等逻辑）。 |
-| **`catalyst-seam-clusters.js`** | 触媒 DBSCAN 与接缝（多源 BFS）；由地图与场域页引用。 |
-| **`corridor-bottleneck-routing.js`** | **b(e)**、瓶颈、**簇 medoid 间加权廊道**；**`xujiahui-site-selection.html`** 不绘廊道折线；**`field_system_selection.html`** 玫红折线绘路径（详见手册 §5.7）。 |
-| **`cluster-field-circles.js`** | 双半径：**r<sub>内</sub>=min(叙事,点云)**、**r<sub>外</sub>=max**；廊道 medoid 用外圆；场域页实线核心 + 虚线缓冲。 |
-| **`cld_priority.csv`** | 主 CLD/CSVI 边表（当前多为徐汇筛选后数据）；备份可命名如 `cld_priority_beifan.csv`。 |
-| **`package.json`** / **`vite.config.js`** | 前端依赖与 Vite 构建（`dist/`）。 |
+| **`csvi-model.html`**、`dual-line-framework.html`、`prototype-cards.html`、`xujiahui-pole-cards.html`、`node-type-cards-v3.html` 等 | 模型与卡片页。 |
+
+## `lib/` 共享脚本（由 `pages/*.html` 以 `../lib/…` 引用）
+
+| 文件 | 用途 |
+|------|------|
+| **`xujiahui-osm-boundary.js`** | 大徐家汇四街道并集边界（数据 `../data/daxujiahui-four-streets-union.geojson`，相对**地图页**路径）。 |
+| **`ac-dom-aggregate.js`** | 四资源主导列聚合；`map_intervention_nodes`、`map_AC_buffer` 等。 |
+| **`catalyst-seam-clusters.js`** | 触媒 DBSCAN 与接缝。 |
+| **`corridor-bottleneck-routing.js`** | b(e)、瓶颈、簇间廊道。 |
+| **`cluster-field-circles.js`** | 双半径场域圆。 |
+| **`field-parcels.js`** | 地块备用逻辑（当前主流程多不引用）。 |
 
 ## 子目录
 
 | 路径 | 用途 |
 |------|------|
-| **`data/`** | 静态地理数据：`xuhui-district-R1278188.geojson`（全区）；`daxujiahui-four-streets-union.geojson`（四街道并集，`npm run fetch:daxujiahui-4`）。**`field-parcels.geojson`** 仅作其它实验/制图参考（主流程已不用地块）。 |
-| **`docs/`** | 手册与说明（本文件、`徐家汇数据分析完整手册.md` 等）。 |
-| **`profiles/`** | 人物画像 HTML 与插图。 |
-| **`public/`** | 构建时拷贝到站点根的资源（如 `sync:cld` 同步的 `cld_priority.csv`）。 |
-| **`dist/`** | `npm run build` 输出。 |
-| **`scripts/`** | Node 工具链：`sync-cld.mjs`、`filter-cld-xuhui.mjs`、`filter-cld-daxujiahui.mjs`、`fetch-daxujiahui-four-streets.mjs`、`persona-png-transparent.mjs`；`scripts/cache/` 为可选 Nominatim 缓存（gitignore）。 |
-| **`.vscode/`** | 编辑器配置（按需提交）。 |
+| **`data/`** | 静态地理数据、选址草稿 JSON、POI GeoJSON；**`data/cld/`** 为边表 CSV。 |
+| **`docs/`** | 手册与说明。 |
+| **`profiles/`** | 人物画像 HTML。 |
+| **`public/`** | 构建拷贝资源（如 `sync:cld` 后的 `cld_priority.csv`）。 |
+| **`dist/`** | `npm run build` 输出（矩阵为 `dist/src/matrix/stay_willingness_matrix.html` 等）。 |
+| **`scripts/`** | Node/Python 工具链（**全部保留在仓库中**；路径见 `package.json`）。 |
+| **`output/`** | 部分导出脚本默认输出目录。 |
 
-## 资源位置说明
+## 资源与 JSX
 
-- **`1.jpg` / `2.jpg`**：叙事页插图，与 `1narrative-framework.html` 同目录引用；若移动需改 `<img src>`。
-- **`csvi_quadrant.jsx` / `matrix_main.jsx`**：独立 JSX 片段，非 Vite 主入口时需自行挂载或复制。
+- **`src/matrix/csvi_quadrant.jsx` / `matrix_main.jsx`**：Vite 矩阵应用；`fetch` 使用 `import.meta.env.BASE_URL` + `cld_priority.csv`（运行时由 `public/` 提供，与 `sync:cld` 同步自 `data/cld/cld_priority.csv`）。
+- 叙事插图：`<img src="../assets/images/1.jpg">` 等（相对 `pages/1narrative-framework.html`）。
 
 ## 常用命令
 
 ```bash
 npm run dev              # Vite 开发（默认入口见 vite.config）
 npm run build
-npm run sync:cld         # 根目录 cld_priority.csv → public/
-npm run filter:cld-xuhui      # 按徐汇多边形筛 CSV → cld_priority_xuhui.csv
-npm run filter:cld-daxujiahui # 按大徐家汇四街道并集筛 CSV → cld_priority_daxujiahui.csv
+npm run sync:cld         # data/cld/cld_priority.csv → public/cld_priority.csv
+npm run filter:cld-xuhui
+npm run filter:cld-daxujiahui
 ```
 
-## 整理建议（未自动执行）
-
-为减少破坏 iframe 与 `fetch('data/...')` 的相对路径，**未批量搬迁根目录 HTML**。若以后要归档，可优先考虑：
-
-1. 新建 `pages/maps/` 等目录，并**批量替换** `1narrative-framework.html` 内所有 `data-src` 与地图内 `CSV_FILENAME`、`xujiahui-osm-boundary.js`、`data/` 的相对路径。
-2. 将散落的 `*.jpg` 收入 `assets/photos/` 并更新引用。
-
-当前以「文档化目录含义」为主，根目录保持扁平便于本地直接双击打开 HTML。
+从仓库根目录起静态服务后，主叙事 URL 示例：`http://localhost:8080/pages/1narrative-framework.html` 或根路径 `http://localhost:8080/`（`index.html` 跳转）。

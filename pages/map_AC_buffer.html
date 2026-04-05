@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="ac-dom-aggregate.js"></script>
-<script src="xujiahui-osm-boundary.js"></script>
+<script src="../lib/ac-dom-aggregate.js"></script>
+<script src="../lib/xujiahui-osm-boundary.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 
@@ -525,7 +525,7 @@ function loadCsvText(text) {
   renderMapFromRaw(raw);
 }
 
-const csvUrl = new URL('cld_priority.csv', window.location.href).href;
+const csvUrl = new URL('../data/cld/cld_priority.csv', window.location.href).href;
 fetch(csvUrl, { cache: 'no-store' })
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(loadCsvText)

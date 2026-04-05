@@ -21,7 +21,7 @@ const Q_LABELS = {
   Q4: { cn: "工作主导", en: "Work-Dominated" },
 };
 
-/** 与 ac-dom-aggregate.js 同步：五主导列齐全则五列均值；否则四列齐全则四列均值；否则 csvi_AC_phys */
+/** 与 lib/ac-dom-aggregate.js 同步：五主导列齐全则五列均值；否则四列齐全则四列均值；否则 csvi_AC_phys */
 const AC_DOM_KEYS = ["AC_med_dom", "AC_tech_dom", "AC_mkt_dom", "AC_sport_dom", "AC_soc_cul_dom"];
 const AC_DOM_KEYS_LEGACY = ["AC_med_dom", "AC_tech_dom", "AC_mkt_dom", "AC_sport_dom"];
 function acCellNum(d, k) {

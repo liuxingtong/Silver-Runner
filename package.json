@@ -13,7 +13,15 @@
     "dev": "vite",
     "prebuild": "npm run sync:cld",
     "build": "vite build",
-    "persona:png": "node scripts/persona-png-transparent.mjs"
+    "persona:png": "node scripts/persona-png-transparent.mjs",
+    "render:site-osm": "node scripts/render-xujiahui-site-osm.mjs",
+    "render:site-osm:vector": "node scripts/render-xujiahui-site-osm.mjs --vector-only",
+    "render:site-osm:carto": "node scripts/render-xujiahui-site-osm.mjs --tiles carto-light",
+    "render:site-osm:de": "node scripts/render-xujiahui-site-osm.mjs --tiles osm-de",
+    "map:scale": "node scripts/map-scale-zoom.mjs",
+    "screenshot:site": "node scripts/screenshot-site-selection.mjs",
+    "screenshot:site:light": "node scripts/screenshot-site-selection.mjs --light --clean",
+    "screenshot:site:light:bw": "node scripts/screenshot-site-selection.mjs --light --clean --bw"
   },
   "dependencies": {
     "d3": "^7.9.0",
@@ -25,6 +33,7 @@
     "@turf/turf": "^7.3.4",
     "@vitejs/plugin-react": "^4.3.4",
     "osmtogeojson": "^3.0.0-beta.5",
+    "playwright": "^1.59.1",
     "sharp": "^0.34.5",
     "vite": "^5.4.11"
   }

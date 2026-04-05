@@ -6,10 +6,10 @@
 <title>人机触媒-认知轴线-场域系统</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="xujiahui-osm-boundary.js"></script>
-<script src="cluster-field-circles.js"></script>
-<script src="catalyst-seam-clusters.js"></script>
-<script src="corridor-bottleneck-routing.js"></script>
+<script src="../lib/xujiahui-osm-boundary.js"></script>
+<script src="../lib/cluster-field-circles.js"></script>
+<script src="../lib/catalyst-seam-clusters.js"></script>
+<script src="../lib/corridor-bottleneck-routing.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,300&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
@@ -507,7 +507,7 @@ function simulateEdges() {
   return edges;
 }
 
-const CSV_FILENAME = 'cld_priority.csv';
+const CSV_FILENAME = '../data/cld/cld_priority.csv';
 
 function estimateNodePositions(rawEdges) {
   const nodes = new Set();
